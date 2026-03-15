@@ -2,888 +2,347 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
+
+local Config = {
+    BV_Enabled = false,
+    Speed = 50,
+    JumpPower = 50,
+    Noclip = false,
+    InfJump = false,
+    Hitbox = false,
+    HitboxSize = 10,
+    Invis_Enabled = false,
+    Invis_Transparency = 0.75,
+    SeatTeleportPos = Vector3.new(-25, 400, 3500)
+}
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "CheatMenu"
+ScreenGui.Name = "MoriendoGui"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = game:GetService("CoreGui")
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 260, 0, 450)
-MainFrame.Position = UDim2.new(0.5, -130, 0.5, -225)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Parent = ScreenGui
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 500, 0, 400)
+Main.Position = UDim2.new(0.5, -250, 0.5, -200)
+Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Main.Active = true
+Main.Draggable = true
+Main.Name = "MainFrame"
 
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Thickness = 0.5
-MainStroke.Color = Color3.fromRGB(255, 255, 255)
-MainStroke.Parent = MainFrame
+local Corner = Instance.new("UICorner", Main)
+Corner.CornerRadius = UDim.new(0, 8)
 
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 3)
-MainCorner.Parent = MainFrame
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.Position = UDim2.new(0, 0, 0, 0)
+Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Title.Text = "Moriendo Hub"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 20
+Title.TextScaled = false
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 8)
 
-local TitleBar = Instance.new("Frame")
-TitleBar.Name = "TitleBar"
-TitleBar.Size = UDim2.new(1, 0, 0, 25)
-TitleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-TitleBar.BorderSizePixel = 0
-TitleBar.Parent = MainFrame
+local Columns = Instance.new("Frame", Main)
+Columns.Size = UDim2.new(1, -20, 1, -50)
+Columns.Position = UDim2.new(0, 10, 0, 40)
+Columns.BackgroundTransparency = 1
 
-local TitleStroke = Instance.new("UIStroke")
-TitleStroke.Thickness = 0.5
-TitleStroke.Color = Color3.fromRGB(255, 255, 255)
-TitleStroke.Parent = TitleBar
+local MovementFrame = Instance.new("Frame", Columns)
+MovementFrame.Size = UDim2.new(0.5, -5, 1, 0)
+MovementFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MovementFrame.Name = "MovementFrame"
+Instance.new("UICorner", MovementFrame).CornerRadius = UDim.new(0, 6)
 
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 3)
-TitleCorner.Parent = TitleBar
+local MovementHeader = Instance.new("TextLabel", MovementFrame)
+MovementHeader.Size = UDim2.new(1, -10, 0, 30)
+MovementHeader.Position = UDim2.new(0, 5, 0, 5)
+MovementHeader.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+MovementHeader.Text = " MOVEMENT"
+MovementHeader.TextColor3 = Color3.new(1, 1, 1)
+MovementHeader.Font = Enum.Font.SourceSansBold
+MovementHeader.TextSize = 18
+MovementHeader.TextXAlignment = Enum.TextXAlignment.Left
+Instance.new("UICorner", MovementHeader).CornerRadius = UDim.new(0, 4)
 
-local Title = Instance.new("TextLabel")
-Title.Name = "Title"
-Title.Size = UDim2.new(1, -25, 1, 0)
-Title.Position = UDim2.new(0, 5, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "CHEAT MENU"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Font = Enum.Font.Code
-Title.TextSize = 14
-Title.Parent = TitleBar
+local MovementScroll = Instance.new("ScrollingFrame", MovementFrame)
+MovementScroll.Size = UDim2.new(1, -10, 1, -45)
+MovementScroll.Position = UDim2.new(0, 5, 0, 40)
+MovementScroll.BackgroundTransparency = 1
+MovementScroll.ScrollBarThickness = 4
+MovementScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+MovementScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-local CloseButton = Instance.new("TextButton")
-CloseButton.Name = "CloseButton"
-CloseButton.Size = UDim2.new(0, 20, 0, 20)
-CloseButton.Position = UDim2.new(1, -22, 0, 2.5)
-CloseButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-CloseButton.BorderSizePixel = 0
-CloseButton.Text = "X"
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.Font = Enum.Font.Code
-CloseButton.TextSize = 14
-CloseButton.Parent = TitleBar
+local MovementList = Instance.new("UIListLayout", MovementScroll)
+MovementList.Padding = UDim.new(0, 5)
+MovementList.SortOrder = Enum.SortOrder.LayoutOrder
 
-local CloseStroke = Instance.new("UIStroke")
-CloseStroke.Thickness = 0.5
-CloseStroke.Color = Color3.fromRGB(255, 255, 255)
-CloseStroke.Parent = CloseButton
+local CombatFrame = Instance.new("Frame", Columns)
+CombatFrame.Size = UDim2.new(0.5, -5, 1, 0)
+CombatFrame.Position = UDim2.new(0.5, 5, 0, 0)
+CombatFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+CombatFrame.Name = "CombatFrame"
+Instance.new("UICorner", CombatFrame).CornerRadius = UDim.new(0, 6)
 
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 3)
-CloseCorner.Parent = CloseButton
+local CombatHeader = Instance.new("TextLabel", CombatFrame)
+CombatHeader.Size = UDim2.new(1, -10, 0, 30)
+CombatHeader.Position = UDim2.new(0, 5, 0, 5)
+CombatHeader.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+CombatHeader.Text = " COMBAT"
+CombatHeader.TextColor3 = Color3.new(1, 1, 1)
+CombatHeader.Font = Enum.Font.SourceSansBold
+CombatHeader.TextSize = 18
+CombatHeader.TextXAlignment = Enum.TextXAlignment.Left
+Instance.new("UICorner", CombatHeader).CornerRadius = UDim.new(0, 4)
 
-local ScrollingFrame = Instance.new("ScrollingFrame")
-ScrollingFrame.Name = "ScrollingFrame"
-ScrollingFrame.Size = UDim2.new(1, 0, 1, -25)
-ScrollingFrame.Position = UDim2.new(0, 0, 0, 25)
-ScrollingFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-ScrollingFrame.BorderSizePixel = 0
-ScrollingFrame.ScrollBarThickness = 4
-ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(30, 30, 30)
-ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-ScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-ScrollingFrame.Parent = MainFrame
+local CombatScroll = Instance.new("ScrollingFrame", CombatFrame)
+CombatScroll.Size = UDim2.new(1, -10, 1, -45)
+CombatScroll.Position = UDim2.new(0, 5, 0, 40)
+CombatScroll.BackgroundTransparency = 1
+CombatScroll.ScrollBarThickness = 4
+CombatScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+CombatScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-local ScrollStroke = Instance.new("UIStroke")
-ScrollStroke.Thickness = 0.5
-ScrollStroke.Color = Color3.fromRGB(255, 255, 255)
-ScrollStroke.Parent = ScrollingFrame
+local CombatList = Instance.new("UIListLayout", CombatScroll)
+CombatList.Padding = UDim.new(0, 5)
+CombatList.SortOrder = Enum.SortOrder.LayoutOrder
 
-local ScrollCorner = Instance.new("UICorner")
-ScrollCorner.CornerRadius = UDim.new(0, 3)
-ScrollCorner.Parent = ScrollingFrame
+local VisualFrame = Instance.new("Frame", Columns)
+VisualFrame.Size = UDim2.new(0.5, -5, 1, 0)
+VisualFrame.Position = UDim2.new(0.5, 5, 0, 0)
+VisualFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+VisualFrame.Visible = false
+Instance.new("UICorner", VisualFrame).CornerRadius = UDim.new(0, 6)
 
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Padding = UDim.new(0, 3)
-UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Parent = ScrollingFrame
-
-local UIPadding = Instance.new("UIPadding")
-UIPadding.PaddingTop = UDim.new(0, 3)
-UIPadding.PaddingBottom = UDim.new(0, 3)
-UIPadding.PaddingLeft = UDim.new(0, 3)
-UIPadding.PaddingRight = UDim.new(0, 3)
-UIPadding.Parent = ScrollingFrame
-
-local Flight = {
-    Enabled = false,
-    Speed = 100,
-    BodyVelocity = nil,
-    Connection = nil
-}
-
-local Hitbox = {
-    Enabled = false,
-    HeadSize = 1000
-}
-
-local Invisible = {
-    Enabled = false,
-    EnabledToggle = true,
-    State = false,
-    Transparency = 0.75,
-    SeatTeleport = Vector3.new(-25.95, 400, 3537.55),
-    Seat = nil,
-    Connection = nil
-}
-
-local Noclip = {
-    Enabled = true,
-    Connection = nil
-}
-
-local Movement = {
-    Speed = 16,
-    JumpPower = 50,
-    Gravity = 196.2,
-    Mode = "WS",
-    BodyVelocity = nil
-}
-
-local InfiniteJump = {
-    Enabled = true,
-    Connection = nil
-}
-
-local TeleportAll = {
-    Enabled = false,
-    Distance = 10
-}
-
-local MenuVisible = true
-local InsertBind = Enum.KeyCode.Insert
-
-local function createToggle(parent, name, default, callback)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -6, 0, 25)
-    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    frame.BorderSizePixel = 0
-    frame.Parent = parent
+local function createToggle(parent, name, prop, callback)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(1, 0, 0, 30)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     
-    local frameStroke = Instance.new("UIStroke")
-    frameStroke.Thickness = 0.5
-    frameStroke.Color = Color3.fromRGB(255, 255, 255)
-    frameStroke.Parent = frame
-    
-    local frameCorner = Instance.new("UICorner")
-    frameCorner.CornerRadius = UDim.new(0, 3)
-    frameCorner.Parent = frame
-    
-    local label = Instance.new("TextLabel")
+    local label = Instance.new("TextLabel", btn)
     label.Size = UDim2.new(0.7, -5, 1, 0)
-    label.Position = UDim2.new(0, 5, 0, 0)
+    label.Position = UDim2.new(0, 8, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = name
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.Font = Enum.Font.SourceSans
+    label.TextSize = 15
     label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Font = Enum.Font.Code
-    label.TextSize = 12
-    label.Parent = frame
     
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0.3, -5, 0, 20)
-    button.Position = UDim2.new(0.7, 0, 0.5, -10)
-    button.BackgroundColor3 = default and Color3.fromRGB(70, 70, 70) or Color3.fromRGB(40, 40, 40)
-    button.BorderSizePixel = 0
-    button.Text = default and "ON" or "OFF"
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.Font = Enum.Font.Code
-    button.TextSize = 12
-    button.Parent = frame
+    local indicator = Instance.new("Frame", btn)
+    indicator.Size = UDim2.new(0, 18, 0, 18)
+    indicator.Position = UDim2.new(1, -25, 0.5, -9)
+    indicator.BackgroundColor3 = Config[prop] and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(60, 60, 60)
+    Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
     
-    local buttonStroke = Instance.new("UIStroke")
-    buttonStroke.Thickness = 0.5
-    buttonStroke.Color = Color3.fromRGB(255, 255, 255)
-    buttonStroke.Parent = button
+    local function updateUI()
+        indicator.BackgroundColor3 = Config[prop] and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(60, 60, 60)
+    end
     
-    local buttonCorner = Instance.new("UICorner")
-    buttonCorner.CornerRadius = UDim.new(0, 3)
-    buttonCorner.Parent = button
-    
-    local state = default
-    
-    button.MouseButton1Click:Connect(function()
-        state = not state
-        button.Text = state and "ON" or "OFF"
-        button.BackgroundColor3 = state and Color3.fromRGB(70, 70, 70) or Color3.fromRGB(40, 40, 40)
-        callback(state)
+    btn.MouseButton1Click:Connect(function()
+        Config[prop] = not Config[prop]
+        updateUI()
+        if callback then callback(Config[prop]) end
     end)
     
-    return frame
+    return btn, updateUI
 end
 
-local function createInput(parent, name, default, callback)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -6, 0, 35)
-    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    frame.BorderSizePixel = 0
-    frame.Parent = parent
+local function createInput(parent, name, prop, suffix)
+    local frame = Instance.new("Frame", parent)
+    frame.Size = UDim2.new(1, 0, 0, 30)
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 4)
     
-    local frameStroke = Instance.new("UIStroke")
-    frameStroke.Thickness = 0.5
-    frameStroke.Color = Color3.fromRGB(255, 255, 255)
-    frameStroke.Parent = frame
-    
-    local frameCorner = Instance.new("UICorner")
-    frameCorner.CornerRadius = UDim.new(0, 3)
-    frameCorner.Parent = frame
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.5, -5, 0, 15)
-    label.Position = UDim2.new(0, 5, 0, 2)
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(0.5, -5, 1, 0)
+    label.Position = UDim2.new(0, 8, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = name
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.Font = Enum.Font.SourceSans
+    label.TextSize = 15
     label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Font = Enum.Font.Code
-    label.TextSize = 12
-    label.Parent = frame
     
-    local box = Instance.new("TextBox")
-    box.Size = UDim2.new(0.5, -5, 0, 22)
-    box.Position = UDim2.new(0.5, 0, 0.5, -11)
-    box.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    box.BorderSizePixel = 0
-    box.Text = tostring(default)
-    box.TextColor3 = Color3.fromRGB(255, 255, 255)
-    box.Font = Enum.Font.Code
-    box.TextSize = 12
-    box.Parent = frame
-    
-    local boxStroke = Instance.new("UIStroke")
-    boxStroke.Thickness = 0.5
-    boxStroke.Color = Color3.fromRGB(255, 255, 255)
-    boxStroke.Parent = box
-    
-    local boxCorner = Instance.new("UICorner")
-    boxCorner.CornerRadius = UDim.new(0, 3)
-    boxCorner.Parent = box
+    local box = Instance.new("TextBox", frame)
+    box.Size = UDim2.new(0.5, -15, 1, -6)
+    box.Position = UDim2.new(0.5, 5, 0, 3)
+    box.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    box.TextColor3 = Color3.new(1, 1, 1)
+    box.Font = Enum.Font.SourceSans
+    box.TextSize = 14
+    box.Text = tostring(Config[prop]) .. (suffix and " " .. suffix or "")
+    box.ClearTextOnFocus = false
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
     
     box.FocusLost:Connect(function()
-        local value = tonumber(box.Text)
-        if value then
-            callback(value)
+        local num = tonumber(box.Text:match("%d+%.?%d*"))
+        if num then
+            Config[prop] = num
+            box.Text = tostring(num) .. (suffix and " " .. suffix or "")
         else
-            box.Text = tostring(default)
+            box.Text = tostring(Config[prop]) .. (suffix and " " .. suffix or "")
         end
     end)
-    
-    return frame
 end
 
-local function updateFlight()
-    if Flight.Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local root = LocalPlayer.Character.HumanoidRootPart
-        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        
-        local cam = workspace.CurrentCamera
-        local move = Vector3.new(0, 0, 0)
-        
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-            move = move + cam.CFrame.LookVector
-        end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-            move = move - cam.CFrame.LookVector
-        end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-            move = move - cam.CFrame.RightVector
-        end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-            move = move + cam.CFrame.RightVector
-        end
-        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-            move = move + Vector3.new(0, 1, 0)
-        end
-        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-            move = move + Vector3.new(0, -1, 0)
-        end
-        
-        if move.Magnitude > 0 then
-            move = move.Unit * Flight.Speed
-        end
-        
-        if not Flight.BodyVelocity then
-            Flight.BodyVelocity = Instance.new("BodyVelocity")
-            Flight.BodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-            Flight.BodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            Flight.BodyVelocity.Parent = root
-        end
-        
-        Flight.BodyVelocity.Velocity = move
-        
-        if hum then
-            hum:ChangeState(Enum.HumanoidStateType.Physics)
-        end
-    elseif Flight.BodyVelocity then
-        Flight.BodyVelocity:Destroy()
-        Flight.BodyVelocity = nil
-    end
-end
+createInput(MovementScroll, "Walk Speed", "Speed", "studs/s")
+createInput(MovementScroll, "Jump Power", "JumpPower")
+createToggle(MovementScroll, "BV Mode", "BV_Enabled")
+createToggle(MovementScroll, "Noclip", "Noclip")
+createToggle(MovementScroll, "Inf Jump", "InfJump")
 
-local function toggleFlight()
-    Flight.Enabled = not Flight.Enabled
-    
-    if Flight.Enabled then
-        if not Flight.Connection then
-            Flight.Connection = RunService.Heartbeat:Connect(updateFlight)
-        end
-    else
-        if Flight.BodyVelocity then
-            Flight.BodyVelocity:Destroy()
-            Flight.BodyVelocity = nil
-        end
-        if Flight.Connection then
-            Flight.Connection:Disconnect()
-            Flight.Connection = nil
-        end
-        
-        local char = LocalPlayer.Character
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        if hum then
-            hum:ChangeState(Enum.HumanoidStateType.GettingUp)
-        end
-    end
-end
+createToggle(CombatScroll, "Hitbox", "Hitbox")
+createInput(CombatScroll, "Hitbox Size", "HitboxSize", "studs")
 
-local function updateHitbox(state)
-    if state then
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    hrp.Size = Vector3.new(Hitbox.HeadSize, Hitbox.HeadSize, Hitbox.HeadSize)
-                    hrp.Transparency = 1
-                    hrp.CanCollide = false
-                end
-            end
-        end
-    else
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    hrp.Size = Vector3.new(2, 2, 1)
-                    hrp.Transparency = 0
-                    hrp.CanCollide = true
-                end
-            end
-        end
-    end
-end
+local InvisToggle, updateInvis = createToggle(MovementScroll, "Invisible [Z]", "Invis_Enabled", function(state)
+    toggleInvis(state)
+end)
 
-local function setCharacterTransparency(transparency)
-    local character = LocalPlayer.Character
-    if character then
-        for _, part in pairs(character:GetDescendants()) do
-            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                part.Transparency = transparency
-            end
-        end
-    end
-end
-
-local function stopSeatReturnHeartbeat()
-    if Invisible.Connection then
-        Invisible.Connection:Disconnect()
-        Invisible.Connection = nil
-    end
-end
-
-local function toggleInvisibility()
-    if not Invisible.EnabledToggle then return end
-    
-    Invisible.State = not Invisible.State
-    local character = LocalPlayer.Character
-    if not character then return end
-    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-    if not humanoidRootPart then return end
-
-    if Invisible.State then
-        setCharacterTransparency(Invisible.Transparency)
-        local savedpos = humanoidRootPart.CFrame
-        
-        task.wait(0.05)
-        pcall(function() character:MoveTo(Invisible.SeatTeleport) end)
-        task.wait(0.05)
-
-        local Seat = Instance.new('Seat')
-        Seat.Parent = workspace
-        Seat.Anchored = false
-        Seat.CanCollide = false
-        Seat.Name = 'invischair'
-        Seat.Transparency = 1
-        Seat.Position = Invisible.SeatTeleport
-
-        local Weld = Instance.new("Weld")
-        Weld.Part0 = Seat
-        local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
-        
-        if torso then
-            Weld.Part1 = torso
-            Weld.Parent = Seat
-            task.wait()
-            pcall(function() Seat.CFrame = savedpos end)
-        else
-            Seat:Destroy()
-        end
-    else
-        setCharacterTransparency(0)
-        task.spawn(function()
-            local inv = workspace:FindFirstChild('invischair')
-            if inv then
-                pcall(function() inv:Destroy() end)
-            end
-        end)
-        stopSeatReturnHeartbeat()
-    end
-end
-
-local function updateNoclip(state)
-    if Noclip.Connection then
-        Noclip.Connection:Disconnect()
-        Noclip.Connection = nil
-    end
-    
-    if state then
-        Noclip.Connection = RunService.Stepped:Connect(function()
-            if LocalPlayer.Character then
-                for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
-                    if v:IsA("BasePart") and v.CanCollide then
-                        v.CanCollide = false
-                    end
-                end
-            end
-        end)
-    end
-end
-
-local function updateMovementStats()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        local hum = LocalPlayer.Character.Humanoid
-        hum.JumpPower = Movement.JumpPower
-        if Movement.Mode == "BV" then
-            hum.WalkSpeed = 16
-        else
-            hum.WalkSpeed = Movement.Speed
-        end
-    end
-    workspace.Gravity = Movement.Gravity
-end
-
-local function toggleMovementMode()
-    Movement.Mode = (Movement.Mode == "WS" and "BV" or "WS")
-    updateMovementStats()
-end
-
-local function setupMovementPhysics(char)
-    local hrp = char:WaitForChild("HumanoidRootPart", 5)
+local function toggleInvis(state)
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    if hrp:FindFirstChild("MovementBV") then hrp.MovementBV:Destroy() end
-    
-    Movement.BodyVelocity = Instance.new("BodyVelocity")
-    Movement.BodyVelocity.Name = "MovementBV"
-    Movement.BodyVelocity.MaxForce = Vector3.zero
-    Movement.BodyVelocity.Velocity = Vector3.zero
-    Movement.BodyVelocity.Parent = hrp
-    
-    task.wait(0.1)
-    updateMovementStats()
-end
 
-local function updateInfiniteJump(state)
-    if InfiniteJump.Connection then
-        InfiniteJump.Connection:Disconnect()
-        InfiniteJump.Connection = nil
-    end
-    
     if state then
-        InfiniteJump.Connection = UserInputService.JumpRequest:Connect(function()
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                local humanoid = LocalPlayer.Character.Humanoid
-                if humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
-                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                end
-            end
-        end)
-    end
-end
-
-createToggle(ScrollingFrame, "Flight", Flight.Enabled, function(state)
-    if state ~= Flight.Enabled then
-        toggleFlight()
-    end
-end)
-
-createInput(ScrollingFrame, "Flight Speed", Flight.Speed, function(value)
-    Flight.Speed = value
-end)
-
-createToggle(ScrollingFrame, "Hitbox", Hitbox.Enabled, function(state)
-    Hitbox.Enabled = state
-    updateHitbox(state)
-end)
-
-createInput(ScrollingFrame, "Hitbox Size", Hitbox.HeadSize, function(value)
-    Hitbox.HeadSize = value
-    if Hitbox.Enabled then
-        updateHitbox(true)
-    end
-end)
-
-createToggle(ScrollingFrame, "Invisible", Invisible.State, function(state)
-    if state ~= Invisible.State then
-        toggleInvisibility()
-    end
-end)
-
-createInput(ScrollingFrame, "Invisible Transparency", Invisible.Transparency, function(value)
-    Invisible.Transparency = math.clamp(value, 0, 1)
-    if Invisible.State and LocalPlayer.Character then
-        setCharacterTransparency(Invisible.Transparency)
-    end
-end)
-
-createToggle(ScrollingFrame, "Noclip", Noclip.Enabled, function(state)
-    Noclip.Enabled = state
-    updateNoclip(state)
-end)
-
-createToggle(ScrollingFrame, "Infinite Jump", InfiniteJump.Enabled, function(state)
-    InfiniteJump.Enabled = state
-    updateInfiniteJump(state)
-end)
-
-local movementFrame = Instance.new("Frame")
-movementFrame.Size = UDim2.new(1, -6, 0, 150)
-movementFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-movementFrame.BorderSizePixel = 0
-movementFrame.Parent = ScrollingFrame
-
-local movementStroke = Instance.new("UIStroke")
-movementStroke.Thickness = 0.5
-movementStroke.Color = Color3.fromRGB(255, 255, 255)
-movementStroke.Parent = movementFrame
-
-local movementCorner = Instance.new("UICorner")
-movementCorner.CornerRadius = UDim.new(0, 3)
-movementCorner.Parent = movementFrame
-
-local movementLabel = Instance.new("TextLabel")
-movementLabel.Size = UDim2.new(1, -10, 0, 18)
-movementLabel.Position = UDim2.new(0, 5, 0, 3)
-movementLabel.BackgroundTransparency = 1
-movementLabel.Text = "MOVEMENT"
-movementLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-movementLabel.TextXAlignment = Enum.TextXAlignment.Left
-movementLabel.Font = Enum.Font.Code
-movementLabel.TextSize = 14
-movementLabel.Parent = movementFrame
-
-createInput(movementFrame, "Speed", Movement.Speed, function(value)
-    Movement.Speed = value
-    updateMovementStats()
-end)
-
-createInput(movementFrame, "Jump Power", Movement.JumpPower, function(value)
-    Movement.JumpPower = value
-    updateMovementStats()
-end)
-
-createInput(movementFrame, "Gravity", Movement.Gravity, function(value)
-    Movement.Gravity = value
-    workspace.Gravity = value
-end)
-
-local modeButton = Instance.new("TextButton")
-modeButton.Size = UDim2.new(1, -10, 0, 22)
-modeButton.Position = UDim2.new(0, 5, 0, 120)
-modeButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-modeButton.BorderSizePixel = 0
-modeButton.Text = "Mode: WS"
-modeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-modeButton.Font = Enum.Font.Code
-modeButton.TextSize = 12
-modeButton.Parent = movementFrame
-
-local modeStroke = Instance.new("UIStroke")
-modeStroke.Thickness = 0.5
-modeStroke.Color = Color3.fromRGB(255, 255, 255)
-modeStroke.Parent = modeButton
-
-local modeCorner = Instance.new("UICorner")
-modeCorner.CornerRadius = UDim.new(0, 3)
-modeCorner.Parent = modeButton
-
-modeButton.MouseButton1Click:Connect(function()
-    toggleMovementMode()
-    modeButton.Text = "Mode: " .. Movement.Mode
-end)
-
-local teleportFrame = Instance.new("Frame")
-teleportFrame.Size = UDim2.new(1, -6, 0, 120)
-teleportFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-teleportFrame.BorderSizePixel = 0
-teleportFrame.Parent = ScrollingFrame
-
-local teleportStroke = Instance.new("UIStroke")
-teleportStroke.Thickness = 0.5
-teleportStroke.Color = Color3.fromRGB(255, 255, 255)
-teleportStroke.Parent = teleportFrame
-
-local teleportCorner = Instance.new("UICorner")
-teleportCorner.CornerRadius = UDim.new(0, 3)
-teleportCorner.Parent = teleportFrame
-
-local teleportLabel = Instance.new("TextLabel")
-teleportLabel.Size = UDim2.new(1, -10, 0, 18)
-teleportLabel.Position = UDim2.new(0, 5, 0, 3)
-teleportLabel.BackgroundTransparency = 1
-teleportLabel.Text = "TELEPORT ALL"
-teleportLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-teleportLabel.TextXAlignment = Enum.TextXAlignment.Left
-teleportLabel.Font = Enum.Font.Code
-teleportLabel.TextSize = 14
-teleportLabel.Parent = teleportFrame
-
-local teleportToggle = Instance.new("TextButton")
-teleportToggle.Size = UDim2.new(0.4, -5, 0, 22)
-teleportToggle.Position = UDim2.new(0, 5, 0, 25)
-teleportToggle.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-teleportToggle.BorderSizePixel = 0
-teleportToggle.Text = "OFF"
-teleportToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-teleportToggle.Font = Enum.Font.Code
-teleportToggle.TextSize = 12
-teleportToggle.Parent = teleportFrame
-
-local teleportToggleStroke = Instance.new("UIStroke")
-teleportToggleStroke.Thickness = 0.5
-teleportToggleStroke.Color = Color3.fromRGB(255, 255, 255)
-teleportToggleStroke.Parent = teleportToggle
-
-local teleportToggleCorner = Instance.new("UICorner")
-teleportToggleCorner.CornerRadius = UDim.new(0, 3)
-teleportToggleCorner.Parent = teleportToggle
-
-local teleportInput = Instance.new("TextBox")
-teleportInput.Size = UDim2.new(0.6, -5, 0, 22)
-teleportInput.Position = UDim2.new(0.4, 0, 0, 25)
-teleportInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-teleportInput.BorderSizePixel = 0
-teleportInput.Text = "10"
-teleportInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-teleportInput.Font = Enum.Font.Code
-teleportInput.TextSize = 12
-teleportInput.Parent = teleportFrame
-
-local teleportInputStroke = Instance.new("UIStroke")
-teleportInputStroke.Thickness = 0.5
-teleportInputStroke.Color = Color3.fromRGB(255, 255, 255)
-teleportInputStroke.Parent = teleportInput
-
-local teleportInputCorner = Instance.new("UICorner")
-teleportInputCorner.CornerRadius = UDim.new(0, 3)
-teleportInputCorner.Parent = teleportInput
-
-local setPosButton = Instance.new("TextButton")
-setPosButton.Size = UDim2.new(1, -10, 0, 22)
-setPosButton.Position = UDim2.new(0, 5, 0, 55)
-setPosButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-setPosButton.BorderSizePixel = 0
-setPosButton.Text = "SET INVISIBLE POS"
-setPosButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-setPosButton.Font = Enum.Font.Code
-setPosButton.TextSize = 11
-setPosButton.Parent = teleportFrame
-
-local setPosStroke = Instance.new("UIStroke")
-setPosStroke.Thickness = 0.5
-setPosStroke.Color = Color3.fromRGB(255, 255, 255)
-setPosStroke.Parent = setPosButton
-
-local setPosCorner = Instance.new("UICorner")
-setPosCorner.CornerRadius = UDim.new(0, 3)
-setPosCorner.Parent = setPosButton
-
-local setPosButton2 = Instance.new("TextButton")
-setPosButton2.Size = UDim2.new(1, -10, 0, 22)
-setPosButton2.Position = UDim2.new(0, 5, 0, 82)
-setPosButton2.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-setPosButton2.BorderSizePixel = 0
-setPosButton2.Text = "TELEPORT TO POS"
-setPosButton2.TextColor3 = Color3.fromRGB(255, 255, 255)
-setPosButton2.Font = Enum.Font.Code
-setPosButton2.TextSize = 11
-setPosButton2.Parent = teleportFrame
-
-local setPosStroke2 = Instance.new("UIStroke")
-setPosStroke2.Thickness = 0.5
-setPosStroke2.Color = Color3.fromRGB(255, 255, 255)
-setPosStroke2.Parent = setPosButton2
-
-local setPosCorner2 = Instance.new("UICorner")
-setPosCorner2.CornerRadius = UDim.new(0, 3)
-setPosCorner2.Parent = setPosButton2
-
-teleportInput.FocusLost:Connect(function()
-    TeleportAll.Distance = tonumber(teleportInput.Text) or 10
-end)
-
-teleportToggle.MouseButton1Click:Connect(function()
-    TeleportAll.Enabled = not TeleportAll.Enabled
-    teleportToggle.Text = TeleportAll.Enabled and "ON" or "OFF"
-    teleportToggle.BackgroundColor3 = TeleportAll.Enabled and Color3.fromRGB(70, 70, 70) or Color3.fromRGB(40, 40, 40)
-end)
-
-setPosButton.MouseButton1Click:Connect(function()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        Invisible.SeatTeleport = LocalPlayer.Character.HumanoidRootPart.Position
-    end
-end)
-
-setPosButton2.MouseButton1Click:Connect(function()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Invisible.SeatTeleport)
-    end
-end)
-
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.KeyCode == InsertBind then
-        MenuVisible = not MenuVisible
-        MainFrame.Visible = MenuVisible
-    end
-end)
-
-RunService.Heartbeat:Connect(function()
-    if Flight.Enabled then
-        updateFlight()
-    end
-    
-    if Movement.Mode == "BV" and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") and Movement.BodyVelocity and Movement.BodyVelocity.Parent then
-        local moveDir = LocalPlayer.Character.Humanoid.MoveDirection
-        
-        Movement.BodyVelocity.MaxForce = Vector3.new(1e6, 0, 1e6)
-        if moveDir.Magnitude > 0 then
-            Movement.BodyVelocity.Velocity = moveDir * Movement.Speed
-        else
-            Movement.BodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        for _, v in pairs(char:GetDescendants()) do 
+            if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then 
+                v.Transparency = Config.Invis_Transparency 
+            end 
         end
-    elseif Movement.Mode == "WS" and Movement.BodyVelocity then
-        Movement.BodyVelocity.MaxForce = Vector3.zero
-        Movement.BodyVelocity.Velocity = Vector3.zero
-    end
-    
-    if TeleportAll.Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local root = LocalPlayer.Character.HumanoidRootPart
-        local targetPos = (root.CFrame * CFrame.new(0, 0, -TeleportAll.Distance)).Position
-        
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                p.Character.HumanoidRootPart.CFrame = CFrame.new(targetPos)
-            end
-        end
-    end
-end)
-
-LocalPlayer.CharacterAdded:Connect(function(character)
-    character:WaitForChild("Humanoid")
-    task.wait(0.1)
-    
-    if Movement.Speed ~= 16 or Movement.JumpPower ~= 50 or Movement.Gravity ~= 196.2 then
-        updateMovementStats()
-    end
-    
-    if Invisible.State then
+        local savedPos = hrp.CFrame
+        char:MoveTo(Config.SeatTeleportPos)
         task.wait(0.1)
-        toggleInvisibility()
-    end
-    
-    if Noclip.Enabled then
-        updateNoclip(true)
-    end
-    
-    if Hitbox.Enabled then
-        updateHitbox(true)
-    end
-    
-    if Flight.Enabled then
-        Flight.Enabled = false
-    end
-    
-    setupMovementPhysics(character)
-end)
-
-LocalPlayer.CharacterRemoving:Connect(function()
-    if Flight.Enabled then
-        Flight.Enabled = false
-        if Flight.BodyVelocity then
-            Flight.BodyVelocity:Destroy()
-            Flight.BodyVelocity = nil
+        local seat = Instance.new('Seat', workspace)
+        seat.Name = "InvisChair"
+        seat.Transparency = 1
+        seat.Position = Config.SeatTeleportPos
+        local weld = Instance.new("Weld", seat)
+        weld.Part0 = seat
+        weld.Part1 = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+        task.wait()
+        seat.CFrame = savedPos
+    else
+        for _, v in pairs(char:GetDescendants()) do 
+            if v:IsA("BasePart") then 
+                v.Transparency = 0 
+            end 
+        end
+        if workspace:FindFirstChild("InvisChair") then 
+            workspace.InvisChair:Destroy() 
         end
     end
-    
-    if Invisible.State then
-        Invisible.State = false
-        setCharacterTransparency(0)
-        local inv = workspace:FindFirstChild('invischair')
-        if inv then
-            pcall(function() inv:Destroy() end)
-        end
-        stopSeatReturnHeartbeat()
-    end
-end)
-
-if LocalPlayer.Character then
-    task.spawn(setupMovementPhysics, LocalPlayer.Character)
 end
+
+local function resetHitboxes()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+            p.Character.Head.Size = Vector3.new(1.2, 1.2, 1.2)
+            p.Character.Head.Transparency = 0
+            p.Character.Head.CanCollide = true
+        end
+    end
+end
+
+RunService.Heartbeat:Connect(function(dt)
+    local char = LocalPlayer.Character
+    if not char then return end
+    
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChild("Humanoid")
+    if not hrp or not hum then return end
+
+    local mBV = hrp:FindFirstChild("MoveBV")
+    if not mBV then 
+        mBV = Instance.new("BodyVelocity")
+        mBV.Name = "MoveBV"
+        mBV.Parent = hrp
+        mBV.MaxForce = Vector3.zero
+    end
+
+    hum.JumpPower = Config.JumpPower
+
+    if Config.BV_Enabled then
+        hum.WalkSpeed = 16
+        local dir = hum.MoveDirection
+        if dir.Magnitude > 0 then
+            mBV.MaxForce = Vector3.new(1e6, 0, 1e6)
+            mBV.Velocity = dir * Config.Speed
+        else 
+            mBV.MaxForce = Vector3.zero
+        end
+    else
+        mBV.MaxForce = Vector3.zero
+        hum.WalkSpeed = Config.Speed
+    end
+
+    if Config.Noclip then
+        for _, v in pairs(char:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = false
+            end
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if Config.Hitbox then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+                p.Character.Head.Size = Vector3.one * Config.HitboxSize
+                p.Character.Head.Transparency = 0.5
+                p.Character.Head.CanCollide = false
+            end
+        end
+    else
+        resetHitboxes()
+    end
+end)
+
+local jumpCooldown = false
+UserInputService.JumpRequest:Connect(function()
+    if Config.InfJump then
+        local char = LocalPlayer.Character
+        if char then
+            local hum = char:FindFirstChild("Humanoid")
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if hum and hrp and not jumpCooldown then
+                jumpCooldown = true
+                
+                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+                hrp.Velocity = Vector3.new(hrp.Velocity.X, 50, hrp.Velocity.Z)
+                
+                task.wait(0.1)
+                jumpCooldown = false
+            end
+        end
+    end
+end)
+
+UserInputService.InputBegan:Connect(function(i, g)
+    if g then return end
+    if i.KeyCode == Enum.KeyCode.Z then
+        Config.Invis_Enabled = not Config.Invis_Enabled
+        toggleInvis(Config.Invis_Enabled)
+        if updateInvis then updateInvis() end
+    elseif i.KeyCode == Enum.KeyCode.Insert then
+        Main.Visible = not Main.Visible
+    end
+end)
 
 Players.PlayerAdded:Connect(function(player)
-    if player ~= LocalPlayer then
-        player.CharacterAdded:Connect(function(character)
-            if Hitbox.Enabled then
-                local hrp = character:WaitForChild("HumanoidRootPart", 10)
-                if hrp then
-                    hrp.Size = Vector3.new(Hitbox.HeadSize, Hitbox.HeadSize, Hitbox.HeadSize)
-                    hrp.Transparency = 1
-                    hrp.CanCollide = false
-                end
-            end
-        end)
-        
-        if player.Character and Hitbox.Enabled then
-            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                hrp.Size = Vector3.new(Hitbox.HeadSize, Hitbox.HeadSize, Hitbox.HeadSize)
-                hrp.Transparency = 1
-                hrp.CanCollide = false
+    player.CharacterAdded:Connect(function(character)
+        task.wait(0.5)
+        if not Config.Hitbox then
+            if character:FindFirstChild("Head") then
+                character.Head.Size = Vector3.new(1.2, 1.2, 1.2)
+                character.Head.Transparency = 0
+                character.Head.CanCollide = true
             end
         end
-    end
+    end)
 end)
-
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer and player.Character and Hitbox.Enabled then
-        local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            hrp.Size = Vector3.new(Hitbox.HeadSize, Hitbox.HeadSize, Hitbox.HeadSize)
-            hrp.Transparency = 1
-            hrp.CanCollide = false
-        end
-    end
-end
-
-updateMovementStats()
-updateNoclip(Noclip.Enabled)
-updateInfiniteJump(InfiniteJump.Enabled)
-
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
