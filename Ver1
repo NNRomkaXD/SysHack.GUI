@@ -1,0 +1,554 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+
+local GUI = {
+    Enabled = true,
+    DragSpeed = 0.25,
+    OpenKey = Enum.KeyCode.RightShift,
+    ToggleKey = Enum.KeyCode.RightShift
+}
+
+local Flight = {
+    Enabled = false,
+    Speed = 100,
+    BodyVelocity = nil,
+    BodyGyro = nil,
+    Connection = nil
+}
+
+local function getDirection()
+    local cam = workspace.CurrentCamera.CFrame
+    local move = Vector3.new(0, 0, 0)
+    
+    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+        move = move + cam.LookVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+        move = move - cam.LookVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+        move = move - cam.RightVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+        move = move + cam.RightVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        move = move + Vector3.new(0, 1, 0)
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+        move = move - Vector3.new(0, 1, 0)
+    end
+    
+    if move.Magnitude > 0 then
+        move = move.Unit
+    end
+    
+    return move
+end
+
+local function toggleFlight()
+    Flight.Enabled = not Flight.Enabled
+    
+    if Flight.Enabled then        
+        local character = LocalPlayer.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        if not root then Flight.Enabled = false return end
+        
+        Flight.BodyVelocity = Instance.new("BodyVelocity")
+        Flight.BodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+        Flight.BodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        Flight.BodyVelocity.Parent = root
+        
+        Flight.BodyGyro = Instance.new("BodyGyro")
+        Flight.BodyGyro.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+        Flight.BodyGyro.P = 10000
+        Flight.BodyGyro.D = 500
+        Flight.BodyGyro.CFrame = root.CFrame
+        Flight.BodyGyro.Parent = root
+        
+        Flight.Connection = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            
+            if hrp and hum and Flight.Enabled then
+                local dir = getDirection()
+                local cam = workspace.CurrentCamera
+                
+                Flight.BodyVelocity.Velocity = dir * Flight.Speed
+                Flight.BodyGyro.CFrame = cam.CFrame
+                hum:ChangeState(Enum.HumanoidStateType.Physics)
+            elseif not Flight.Enabled then
+                if Flight.Connection then Flight.Connection:Disconnect() end
+            end
+        end)
+    else
+        if Flight.Connection then Flight.Connection:Disconnect() end
+        if Flight.BodyVelocity then Flight.BodyVelocity:Destroy() end
+        if Flight.BodyGyro then Flight.BodyGyro:Destroy() end
+        
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.GettingUp) end
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(function()
+    if Flight.Enabled then
+        toggleFlight()
+    end
+end)
+
+local Hitbox = {
+    Enabled = true,
+    Size = 1000,
+    Transparency = 1
+}
+
+local function applyHitbox(character)
+    local hrp = character:WaitForChild("HumanoidRootPart", 10)
+    if hrp and Hitbox.Enabled then
+        hrp.Size = Vector3.new(Hitbox.Size, Hitbox.Size, Hitbox.Size)
+        hrp.Transparency = Hitbox.Transparency
+        hrp.CanCollide = false
+    end
+end
+
+local function setupHitboxPlayer(player)
+    if player ~= LocalPlayer then
+        player.CharacterAdded:Connect(applyHitbox)
+        if player.Character then
+            applyHitbox(player.Character)
+        end
+    end
+end
+
+Players.PlayerAdded:Connect(setupHitboxPlayer)
+for _, player in ipairs(Players:GetPlayers()) do
+    setupHitboxPlayer(player)
+end
+
+local Invisible = {
+    Enabled = true,
+    Active = false,
+    Transparency = 0.75,
+    SeatPos = Vector3.new(-25.95, 400, 3537.55),
+    VoidY = -50,
+    Connection = nil,
+    CurrentSeat = nil
+}
+
+local function setCharacterTransparency(transparency)
+    local character = LocalPlayer.Character
+    if character then
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                part.Transparency = transparency
+            end
+        end
+    end
+end
+
+local function stopInvisHeartbeat()
+    if Invisible.Connection then
+        Invisible.Connection:Disconnect()
+        Invisible.Connection = nil
+    end
+end
+
+local function toggleInvisibility()
+    if not Invisible.Enabled then return end
+    
+    Invisible.Active = not Invisible.Active
+    local character = LocalPlayer.Character
+    if not character then return end
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+
+    if Invisible.Active then
+        setCharacterTransparency(Invisible.Transparency)
+        local savedpos = humanoidRootPart.CFrame
+        
+        task.wait(0.05)
+        pcall(function() character:MoveTo(Invisible.SeatPos) end)
+        task.wait(0.05)
+
+        if humanoidRootPart.Position.Y < Invisible.VoidY then
+            pcall(function() character:MoveTo(savedpos.Position) end)
+            Invisible.Active = false
+            setCharacterTransparency(0)
+            return
+        end
+
+        local Seat = Instance.new('Seat')
+        Seat.Parent = workspace
+        Seat.Anchored = false
+        Seat.CanCollide = false
+        Seat.Name = 'invischair'
+        Seat.Transparency = 1
+        Seat.Position = Invisible.SeatPos
+
+        local Weld = Instance.new("Weld")
+        Weld.Part0 = Seat
+        local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+        
+        if torso then
+            Weld.Part1 = torso
+            Weld.Parent = Seat
+            task.wait()
+            pcall(function() Seat.CFrame = savedpos end)
+            Invisible.CurrentSeat = Seat.Position
+        else
+            Seat:Destroy()
+            Invisible.CurrentSeat = nil
+            stopInvisHeartbeat()
+        end
+    else
+        setCharacterTransparency(0)
+        task.spawn(function()
+            local inv = workspace:FindFirstChild('invischair')
+            if inv then
+                pcall(function() inv:Destroy() end)
+            end
+        end)
+        stopInvisHeartbeat()
+        Invisible.CurrentSeat = nil
+    end
+end
+
+local Noclip = {
+    Enabled = true,
+    Connection = nil
+}
+
+local function toggleNoclip()
+    Noclip.Enabled = not Noclip.Enabled
+    
+    if Noclip.Enabled then
+        Noclip.Connection = RunService.Stepped:Connect(function()
+            if LocalPlayer.Character then
+                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        if Noclip.Connection then Noclip.Connection:Disconnect() end
+    end
+end
+
+local Physics = {
+    Speed = 16,
+    JumpPower = 50,
+    Gravity = 196.2,
+    Mode = "WS",
+    BodyVelocity = nil
+}
+
+local function updatePhysicsStats()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        local hum = LocalPlayer.Character.Humanoid
+        hum.JumpPower = Physics.JumpPower
+        if Physics.Mode == "BV" then
+            hum.WalkSpeed = 16
+        else
+            hum.WalkSpeed = Physics.Speed
+        end
+    end
+    workspace.Gravity = Physics.Gravity
+end
+
+local function togglePhysicsMode()
+    Physics.Mode = (Physics.Mode == "WS" and "BV" or "WS")
+    updatePhysicsStats()
+end
+
+local function setupPhysics(char)
+    local hrp = char:WaitForChild("HumanoidRootPart", 5)
+    if not hrp then return end
+    if hrp:FindFirstChild("MovementBV") then hrp.MovementBV:Destroy() end
+    
+    Physics.BodyVelocity = Instance.new("BodyVelocity")
+    Physics.BodyVelocity.Name = "MovementBV"
+    Physics.BodyVelocity.MaxForce = Vector3.zero
+    Physics.BodyVelocity.Velocity = Vector3.zero
+    Physics.BodyVelocity.Parent = hrp
+    
+    task.wait(0.1)
+    updatePhysicsStats()
+end
+
+if LocalPlayer.Character then task.spawn(setupPhysics, LocalPlayer.Character) end
+LocalPlayer.CharacterAdded:Connect(setupPhysics)
+
+RunService.RenderStepped:Connect(function()
+    if not (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") and Physics.BodyVelocity and Physics.BodyVelocity.Parent) then return end
+    
+    local moveDir = LocalPlayer.Character.Humanoid.MoveDirection
+    
+    if Physics.Mode == "BV" then
+        Physics.BodyVelocity.MaxForce = Vector3.new(1e6, 0, 1e6)
+        if moveDir.Magnitude > 0 then
+            Physics.BodyVelocity.Velocity = moveDir * Physics.Speed
+        else
+            Physics.BodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        end
+    else
+        Physics.BodyVelocity.MaxForce = Vector3.zero
+        Physics.BodyVelocity.Velocity = Vector3.zero
+    end
+end)
+
+updatePhysicsStats()
+
+local InfiniteJump = {
+    Enabled = true
+}
+
+UserInputService.JumpRequest:Connect(function()
+    if InfiniteJump.Enabled then
+        local character = LocalPlayer.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+    end
+end)
+
+local function createGUI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "CheatMenu"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(0, 300, 0, 400)
+    mainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    mainFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
+    mainFrame.BorderSizePixel = 1
+    mainFrame.Active = true
+    mainFrame.Draggable = true
+    mainFrame.Parent = screenGui
+    
+    local titleBar = Instance.new("Frame")
+    titleBar.Name = "TitleBar"
+    titleBar.Size = UDim2.new(1, 0, 0, 30)
+    titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    titleBar.BorderColor3 = Color3.fromRGB(60, 60, 60)
+    titleBar.BorderSizePixel = 1
+    titleBar.Parent = mainFrame
+    
+    local title = Instance.new("TextLabel")
+    title.Name = "Title"
+    title.Size = UDim2.new(1, -10, 1, 0)
+    title.Position = UDim2.new(0, 5, 0, 0)
+    title.BackgroundTransparency = 1
+    title.Text = "CHEAT MENU"
+    title.TextColor3 = Color3.fromRGB(200, 200, 200)
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Font = Enum.Font.SourceSans
+    title.TextSize = 18
+    title.Parent = titleBar
+    
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 30, 1, 0)
+    closeButton.Position = UDim2.new(1, -30, 0, 0)
+    closeButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    closeButton.BorderColor3 = Color3.fromRGB(60, 60, 60)
+    closeButton.BorderSizePixel = 1
+    closeButton.Text = "X"
+    closeButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+    closeButton.Font = Enum.Font.SourceSans
+    closeButton.TextSize = 18
+    closeButton.Parent = titleBar
+    
+    local scrollingFrame = Instance.new("ScrollingFrame")
+    scrollingFrame.Name = "Features"
+    scrollingFrame.Size = UDim2.new(1, 0, 1, -30)
+    scrollingFrame.Position = UDim2.new(0, 0, 0, 30)
+    scrollingFrame.BackgroundTransparency = 1
+    scrollingFrame.BorderSizePixel = 0
+    scrollingFrame.ScrollBarThickness = 8
+    scrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
+    scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scrollingFrame.Parent = mainFrame
+    
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 4)
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = scrollingFrame
+    
+    local padding = Instance.new("UIPadding")
+    padding.PaddingTop = UDim.new(0, 4)
+    padding.PaddingBottom = UDim.new(0, 4)
+    padding.PaddingLeft = UDim.new(0, 4)
+    padding.PaddingRight = UDim.new(0, 4)
+    padding.Parent = scrollingFrame
+    
+    local function createToggle(text, getFunc, setFunc, order)
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(1, -8, 0, 35)
+        frame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        frame.BorderColor3 = Color3.fromRGB(60, 60, 60)
+        frame.BorderSizePixel = 1
+        frame.Parent = scrollingFrame
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(0, 150, 1, 0)
+        label.Position = UDim2.new(0, 5, 0, 0)
+        label.BackgroundTransparency = 1
+        label.Text = text
+        label.TextColor3 = Color3.fromRGB(200, 200, 200)
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Font = Enum.Font.SourceSans
+        label.TextSize = 16
+        label.Parent = frame
+        
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0, 50, 0, 25)
+        button.Position = UDim2.new(1, -55, 0.5, -12.5)
+        button.BackgroundColor3 = getFunc() and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(100, 0, 0)
+        button.BorderColor3 = Color3.fromRGB(60, 60, 60)
+        button.BorderSizePixel = 1
+        button.Text = getFunc() and "ON" or "OFF"
+        button.TextColor3 = Color3.fromRGB(255, 255, 255)
+        button.Font = Enum.Font.SourceSansBold
+        button.TextSize = 14
+        button.Parent = frame
+        
+        button.MouseButton1Click:Connect(function()
+            setFunc(not getFunc())
+            button.BackgroundColor3 = getFunc() and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(100, 0, 0)
+            button.Text = getFunc() and "ON" or "OFF"
+        end)
+        
+        return frame
+    end
+    
+    local function createSlider(text, getFunc, setFunc, min, max, order)
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(1, -8, 0, 50)
+        frame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        frame.BorderColor3 = Color3.fromRGB(60, 60, 60)
+        frame.BorderSizePixel = 1
+        frame.Parent = scrollingFrame
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -10, 0, 20)
+        label.Position = UDim2.new(0, 5, 0, 2)
+        label.BackgroundTransparency = 1
+        label.Text = text .. ": " .. math.floor(getFunc() * 10) / 10
+        label.TextColor3 = Color3.fromRGB(200, 200, 200)
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Font = Enum.Font.SourceSans
+        label.TextSize = 14
+        label.Parent = frame
+        
+        local slider = Instance.new("Frame")
+        slider.Size = UDim2.new(1, -20, 0, 4)
+        slider.Position = UDim2.new(0, 10, 0, 30)
+        slider.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        slider.BorderColor3 = Color3.fromRGB(60, 60, 60)
+        slider.BorderSizePixel = 1
+        slider.Parent = frame
+        
+        local fill = Instance.new("Frame")
+        fill.Size = UDim2.new((getFunc() - min) / (max - min), 0, 1, 0)
+        fill.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+        fill.BorderSizePixel = 0
+        fill.Parent = slider
+        
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0, 12, 0, 12)
+        button.Position = UDim2.new((getFunc() - min) / (max - min), -6, 0.5, -6)
+        button.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+        button.BorderColor3 = Color3.fromRGB(80, 80, 80)
+        button.BorderSizePixel = 1
+        button.Text = ""
+        button.Parent = slider
+        
+        local dragging = false
+        
+        button.MouseButton1Down:Connect(function()
+            dragging = true
+        end)
+        
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+            end
+        end))
+        
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local mousePos = UserInputService:GetMouseLocation()
+                local sliderPos = slider.AbsolutePosition
+                local sliderSize = slider.AbsoluteSize.X
+                local relativePos = math.clamp((mousePos.X - sliderPos.X) / sliderSize, 0, 1)
+                local newValue = min + (max - min) * relativePos
+                setFunc(newValue)
+                fill.Size = UDim2.new(relativePos, 0, 1, 0)
+                button.Position = UDim2.new(relativePos, -6, 0.5, -6)
+                label.Text = text .. ": " .. math.floor(newValue * 10) / 10
+            end
+        end)
+        
+        return frame
+    end
+    
+    createToggle("Flight", function() return Flight.Enabled end, function(v) Flight.Enabled = v toggleFlight() end)
+    createToggle("Hitbox", function() return Hitbox.Enabled end, function(v) Hitbox.Enabled = v end)
+    createToggle("Invisible", function() return Invisible.Active end, function() toggleInvisibility() end)
+    createToggle("Noclip", function() return Noclip.Enabled end, function(v) Noclip.Enabled = v toggleNoclip() end)
+    createToggle("Physics Mode", function() return Physics.Mode == "BV" end, function() togglePhysicsMode() end)
+    createToggle("Infinite Jump", function() return InfiniteJump.Enabled end, function(v) InfiniteJump.Enabled = v end)
+    
+    createSlider("Flight Speed", function() return Flight.Speed end, function(v) Flight.Speed = v end, 0, 500)
+    createSlider("Hitbox Size", function() return Hitbox.Size end, function(v) Hitbox.Size = v end, 1, 5000)
+    createSlider("Walk Speed", function() return Physics.Speed end, function(v) Physics.Speed = v updatePhysicsStats() end, 0, 500)
+    createSlider("Jump Power", function() return Physics.JumpPower end, function(v) Physics.JumpPower = v updatePhysicsStats() end, 0, 500)
+    createSlider("Gravity", function() return workspace.Gravity end, function(v) workspace.Gravity = v updatePhysicsStats() end, 0, 1000)
+    
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
+    
+    local canvasSize = layout.AbsoluteContentSize
+    scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, canvasSize.Y + 8)
+    
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 8)
+    end)
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == GUI.ToggleKey then
+        local gui = LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("CheatMenu")
+        if gui then
+            gui:Destroy()
+        else
+            createGUI()
+        end
+    end
+    if input.KeyCode == Enum.KeyCode.Z then
+        toggleInvisibility()
+    end
+end)
+
+if GUI.Enabled then
+    createGUI()
+end
+
+toggleNoclip()
