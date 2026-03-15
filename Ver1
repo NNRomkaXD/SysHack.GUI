@@ -13,11 +13,13 @@ local Config = {
     HitboxSize = 10,
     Invis_Enabled = false,
     Invis_Transparency = 0.75,
-    SeatTeleportPos = Vector3.new(-25, 400, 3500)
+    SeatTeleportPos = Vector3.new(-25, 400, 3500),
+    TeleportEnabled = false,
+    TeleportDistance = 10
 }
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MoriendoGui"
+ScreenGui.Name = "FrulesGui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game:GetService("CoreGui")
 
@@ -36,83 +38,135 @@ local Title = Instance.new("TextLabel", Main)
 Title.Size = UDim2.new(1, 0, 0, 35)
 Title.Position = UDim2.new(0, 0, 0, 0)
 Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Title.Text = "Moriendo Hub"
+Title.Text = "Frules GUI"
 Title.TextColor3 = Color3.new(1, 1, 1)
 Title.Font = Enum.Font.SourceSansBold
 Title.TextSize = 20
-Title.TextScaled = false
 Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 8)
 
+local Tabs = Instance.new("Frame", Main)
+Tabs.Size = UDim2.new(1, -20, 0, 30)
+Tabs.Position = UDim2.new(0, 10, 0, 40)
+Tabs.BackgroundTransparency = 1
+
+local CharacterTab = Instance.new("TextButton", Tabs)
+CharacterTab.Size = UDim2.new(0.33, -5, 1, 0)
+CharacterTab.Position = UDim2.new(0, 0, 0, 0)
+CharacterTab.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
+CharacterTab.Text = "CHARACTER"
+CharacterTab.TextColor3 = Color3.new(1, 1, 1)
+CharacterTab.Font = Enum.Font.SourceSansBold
+CharacterTab.TextSize = 16
+Instance.new("UICorner", CharacterTab).CornerRadius = UDim.new(0, 4)
+
+local HitboxTab = Instance.new("TextButton", Tabs)
+HitboxTab.Size = UDim2.new(0.33, -5, 1, 0)
+HitboxTab.Position = UDim2.new(0.33, 5, 0, 0)
+HitboxTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+HitboxTab.Text = "HITBOX"
+HitboxTab.TextColor3 = Color3.new(1, 1, 1)
+HitboxTab.Font = Enum.Font.SourceSansBold
+HitboxTab.TextSize = 16
+Instance.new("UICorner", HitboxTab).CornerRadius = UDim.new(0, 4)
+
+local TeleportTab = Instance.new("TextButton", Tabs)
+TeleportTab.Size = UDim2.new(0.33, -5, 1, 0)
+TeleportTab.Position = UDim2.new(0.66, 10, 0, 0)
+TeleportTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+TeleportTab.Text = "TELEPORT"
+TeleportTab.TextColor3 = Color3.new(1, 1, 1)
+TeleportTab.Font = Enum.Font.SourceSansBold
+TeleportTab.TextSize = 16
+Instance.new("UICorner", TeleportTab).CornerRadius = UDim.new(0, 4)
+
 local Columns = Instance.new("Frame", Main)
-Columns.Size = UDim2.new(1, -20, 1, -50)
-Columns.Position = UDim2.new(0, 10, 0, 40)
+Columns.Size = UDim2.new(1, -20, 1, -80)
+Columns.Position = UDim2.new(0, 10, 0, 75)
 Columns.BackgroundTransparency = 1
 
-local MovementFrame = Instance.new("Frame", Columns)
-MovementFrame.Size = UDim2.new(0.5, -5, 1, 0)
-MovementFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-MovementFrame.Name = "MovementFrame"
-Instance.new("UICorner", MovementFrame).CornerRadius = UDim.new(0, 6)
+local CharacterFrame = Instance.new("Frame", Columns)
+CharacterFrame.Size = UDim2.new(1, 0, 1, 0)
+CharacterFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+CharacterFrame.Name = "CharacterFrame"
+CharacterFrame.Visible = true
+Instance.new("UICorner", CharacterFrame).CornerRadius = UDim.new(0, 6)
 
-local MovementHeader = Instance.new("TextLabel", MovementFrame)
-MovementHeader.Size = UDim2.new(1, -10, 0, 30)
-MovementHeader.Position = UDim2.new(0, 5, 0, 5)
-MovementHeader.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-MovementHeader.Text = " MOVEMENT"
-MovementHeader.TextColor3 = Color3.new(1, 1, 1)
-MovementHeader.Font = Enum.Font.SourceSansBold
-MovementHeader.TextSize = 18
-MovementHeader.TextXAlignment = Enum.TextXAlignment.Left
-Instance.new("UICorner", MovementHeader).CornerRadius = UDim.new(0, 4)
+local CharacterScroll = Instance.new("ScrollingFrame", CharacterFrame)
+CharacterScroll.Size = UDim2.new(1, -10, 1, -10)
+CharacterScroll.Position = UDim2.new(0, 5, 0, 5)
+CharacterScroll.BackgroundTransparency = 1
+CharacterScroll.ScrollBarThickness = 4
+CharacterScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+CharacterScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-local MovementScroll = Instance.new("ScrollingFrame", MovementFrame)
-MovementScroll.Size = UDim2.new(1, -10, 1, -45)
-MovementScroll.Position = UDim2.new(0, 5, 0, 40)
-MovementScroll.BackgroundTransparency = 1
-MovementScroll.ScrollBarThickness = 4
-MovementScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-MovementScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+local CharacterList = Instance.new("UIListLayout", CharacterScroll)
+CharacterList.Padding = UDim.new(0, 5)
+CharacterList.SortOrder = Enum.SortOrder.LayoutOrder
 
-local MovementList = Instance.new("UIListLayout", MovementScroll)
-MovementList.Padding = UDim.new(0, 5)
-MovementList.SortOrder = Enum.SortOrder.LayoutOrder
+local HitboxFrame = Instance.new("Frame", Columns)
+HitboxFrame.Size = UDim2.new(1, 0, 1, 0)
+HitboxFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+HitboxFrame.Name = "HitboxFrame"
+HitboxFrame.Visible = false
+Instance.new("UICorner", HitboxFrame).CornerRadius = UDim.new(0, 6)
 
-local CombatFrame = Instance.new("Frame", Columns)
-CombatFrame.Size = UDim2.new(0.5, -5, 1, 0)
-CombatFrame.Position = UDim2.new(0.5, 5, 0, 0)
-CombatFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-CombatFrame.Name = "CombatFrame"
-Instance.new("UICorner", CombatFrame).CornerRadius = UDim.new(0, 6)
+local HitboxScroll = Instance.new("ScrollingFrame", HitboxFrame)
+HitboxScroll.Size = UDim2.new(1, -10, 1, -10)
+HitboxScroll.Position = UDim2.new(0, 5, 0, 5)
+HitboxScroll.BackgroundTransparency = 1
+HitboxScroll.ScrollBarThickness = 4
+HitboxScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+HitboxScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-local CombatHeader = Instance.new("TextLabel", CombatFrame)
-CombatHeader.Size = UDim2.new(1, -10, 0, 30)
-CombatHeader.Position = UDim2.new(0, 5, 0, 5)
-CombatHeader.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-CombatHeader.Text = " COMBAT"
-CombatHeader.TextColor3 = Color3.new(1, 1, 1)
-CombatHeader.Font = Enum.Font.SourceSansBold
-CombatHeader.TextSize = 18
-CombatHeader.TextXAlignment = Enum.TextXAlignment.Left
-Instance.new("UICorner", CombatHeader).CornerRadius = UDim.new(0, 4)
+local HitboxList = Instance.new("UIListLayout", HitboxScroll)
+HitboxList.Padding = UDim.new(0, 5)
+HitboxList.SortOrder = Enum.SortOrder.LayoutOrder
 
-local CombatScroll = Instance.new("ScrollingFrame", CombatFrame)
-CombatScroll.Size = UDim2.new(1, -10, 1, -45)
-CombatScroll.Position = UDim2.new(0, 5, 0, 40)
-CombatScroll.BackgroundTransparency = 1
-CombatScroll.ScrollBarThickness = 4
-CombatScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-CombatScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+local TeleportFrame = Instance.new("Frame", Columns)
+TeleportFrame.Size = UDim2.new(1, 0, 1, 0)
+TeleportFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TeleportFrame.Name = "TeleportFrame"
+TeleportFrame.Visible = false
+Instance.new("UICorner", TeleportFrame).CornerRadius = UDim.new(0, 6)
 
-local CombatList = Instance.new("UIListLayout", CombatScroll)
-CombatList.Padding = UDim.new(0, 5)
-CombatList.SortOrder = Enum.SortOrder.LayoutOrder
+local TeleportScroll = Instance.new("ScrollingFrame", TeleportFrame)
+TeleportScroll.Size = UDim2.new(1, -10, 1, -10)
+TeleportScroll.Position = UDim2.new(0, 5, 0, 5)
+TeleportScroll.BackgroundTransparency = 1
+TeleportScroll.ScrollBarThickness = 4
+TeleportScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+TeleportScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-local VisualFrame = Instance.new("Frame", Columns)
-VisualFrame.Size = UDim2.new(0.5, -5, 1, 0)
-VisualFrame.Position = UDim2.new(0.5, 5, 0, 0)
-VisualFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-VisualFrame.Visible = false
-Instance.new("UICorner", VisualFrame).CornerRadius = UDim.new(0, 6)
+local TeleportList = Instance.new("UIListLayout", TeleportScroll)
+TeleportList.Padding = UDim.new(0, 5)
+TeleportList.SortOrder = Enum.SortOrder.LayoutOrder
+
+CharacterTab.MouseButton1Click:Connect(function()
+    CharacterFrame.Visible = true
+    HitboxFrame.Visible = false
+    TeleportFrame.Visible = false
+    CharacterTab.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
+    HitboxTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    TeleportTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+end)
+
+HitboxTab.MouseButton1Click:Connect(function()
+    CharacterFrame.Visible = false
+    HitboxFrame.Visible = true
+    TeleportFrame.Visible = false
+    CharacterTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    HitboxTab.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
+    TeleportTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+end)
+
+TeleportTab.MouseButton1Click:Connect(function()
+    CharacterFrame.Visible = false
+    HitboxFrame.Visible = false
+    TeleportFrame.Visible = true
+    CharacterTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    HitboxTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    TeleportTab.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
+end)
 
 local function createToggle(parent, name, prop, callback)
     local btn = Instance.new("TextButton", parent)
@@ -189,18 +243,57 @@ local function createInput(parent, name, prop, suffix)
     end)
 end
 
-createInput(MovementScroll, "Walk Speed", "Speed", "studs/s")
-createInput(MovementScroll, "Jump Power", "JumpPower")
-createToggle(MovementScroll, "BV Mode", "BV_Enabled")
-createToggle(MovementScroll, "Noclip", "Noclip")
-createToggle(MovementScroll, "Inf Jump", "InfJump")
-
-createToggle(CombatScroll, "Hitbox", "Hitbox")
-createInput(CombatScroll, "Hitbox Size", "HitboxSize", "studs")
-
-local InvisToggle, updateInvis = createToggle(MovementScroll, "Invisible [Z]", "Invis_Enabled", function(state)
+createInput(CharacterScroll, "Walk Speed", "Speed", "studs/s")
+createInput(CharacterScroll, "Jump Power", "JumpPower")
+createToggle(CharacterScroll, "Body Velocity Mode", "BV_Enabled")
+createToggle(CharacterScroll, "No Clip", "Noclip", function(state)
+    if state then
+        local char = LocalPlayer.Character
+        if char then
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false
+                end
+            end
+        end
+    end
+end)
+createToggle(CharacterScroll, "Infinite Jump", "InfJump")
+createToggle(CharacterScroll, "Invisible", "Invis_Enabled", function(state)
     toggleInvis(state)
 end)
+
+createToggle(HitboxScroll, "Hitbox", "Hitbox")
+createInput(HitboxScroll, "Hitbox Size", "HitboxSize", "studs")
+
+local teleportConnection = nil
+local TeleportToggle, updateTeleport = createToggle(TeleportScroll, "Teleport All Players", "TeleportEnabled", function(state)
+    if state then
+        teleportConnection = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+
+            local targetPos = (root.CFrame * CFrame.new(0, 0, -Config.TeleportDistance)).Position
+
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character then
+                    local tRoot = player.Character:FindFirstChild("HumanoidRootPart")
+                    if tRoot then
+                        tRoot.CFrame = CFrame.new(targetPos)
+                    end
+                end
+            end
+        end)
+    else
+        if teleportConnection then
+            teleportConnection:Disconnect()
+            teleportConnection = nil
+        end
+    end
+end)
+
+createInput(TeleportScroll, "Teleport Distance", "TeleportDistance", "studs")
 
 local function toggleInvis(state)
     local char = LocalPlayer.Character
@@ -286,6 +379,12 @@ RunService.Heartbeat:Connect(function(dt)
                 v.CanCollide = false
             end
         end
+    else
+        for _, v in pairs(char:GetDescendants()) do
+            if v:IsA("BasePart") and not v.CanCollide then
+                v.CanCollide = true
+            end
+        end
     end
 end)
 
@@ -303,21 +402,13 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-local jumpCooldown = false
 UserInputService.JumpRequest:Connect(function()
     if Config.InfJump then
         local char = LocalPlayer.Character
         if char then
             local hum = char:FindFirstChild("Humanoid")
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if hum and hrp and not jumpCooldown then
-                jumpCooldown = true
-                
+            if hum then
                 hum:ChangeState(Enum.HumanoidStateType.Jumping)
-                hrp.Velocity = Vector3.new(hrp.Velocity.X, 50, hrp.Velocity.Z)
-                
-                task.wait(0.1)
-                jumpCooldown = false
             end
         end
     end
@@ -333,6 +424,19 @@ UserInputService.InputBegan:Connect(function(i, g)
         Main.Visible = not Main.Visible
     end
 end)
+
+local updateInvis
+for _, v in pairs(CharacterScroll:GetChildren()) do
+    if v:IsA("TextButton") and v:FindFirstChild("TextLabel") and v.TextLabel.Text == "Invisible" then
+        local indicator = v:FindFirstChild("Frame")
+        if indicator then
+            updateInvis = function()
+                indicator.BackgroundColor3 = Config.Invis_Enabled and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(60, 60, 60)
+            end
+        end
+        break
+    end
+end
 
 Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function(character)
