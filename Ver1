@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
 local Config = {
@@ -13,11 +14,12 @@ local Config = {
     HitboxSize = 10,
     Invis_Enabled = false,
     Invis_Transparency = 0.75,
-    SeatTeleportPos = Vector3.new(-500000, 500000, 500000),
+    SeatTeleportPos = Vector3.new(9e9, 9e9, 9e9),
     TeleportEnabled = false,
     TeleportDistance = 10,
     DisableRagdoll = false,
     TouchFling = false,
+    FlingPower = 9e9,
     TeleportTo = Vector3.new(0, 50, 0)
 }
 
@@ -208,7 +210,7 @@ local function createToggle(parent, name, prop, callback)
     return btn, updateUI
 end
 
-local function createInput(parent, name, prop, suffix)
+local function createInput(parent, name, prop, suffix, isScientific)
     local frame = Instance.new("Frame", parent)
     frame.Size = UDim2.new(1, 0, 0, 30)
     frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
@@ -231,22 +233,34 @@ local function createInput(parent, name, prop, suffix)
     box.TextColor3 = Color3.new(1, 1, 1)
     box.Font = Enum.Font.SourceSans
     box.TextSize = 14
-    box.Text = tostring(Config[prop]) .. (suffix and " " .. suffix or "")
+    if isScientific then
+        box.Text = string.format("%.0e", Config[prop])
+    else
+        box.Text = tostring(Config[prop]) .. (suffix and " " .. suffix or "")
+    end
     box.ClearTextOnFocus = false
     Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
     
     box.FocusLost:Connect(function()
-        local num = tonumber(box.Text:match("%d+%.?%d*"))
+        local text = box.Text:gsub("%s+", "")
+        local num = tonumber(text)
         if num then
             Config[prop] = num
-            box.Text = tostring(num) .. (suffix and " " .. suffix or "")
+            if isScientific then
+                box.Text = string.format("%.0e", Config[prop])
+            else
+                box.Text = tostring(num) .. (suffix and " " .. suffix or "")
+            end
         else
-            box.Text = tostring(Config[prop]) .. (suffix and " " .. suffix or "")
+            if isScientific then
+                box.Text = string.format("%.0e", Config[prop])
+            else
+                box.Text = tostring(Config[prop]) .. (suffix and " " .. suffix or "")
+            end
         end
     end)
 end
 
--- Функция для создания поля ввода координат (X Y Z в одну строку) с кнопкой в стиле GUI
 local function createCoordinateInput(parent, name, prop)
     local frame = Instance.new("Frame", parent)
     frame.Size = UDim2.new(1, 0, 0, 30)
@@ -284,18 +298,16 @@ local function createCoordinateInput(parent, name, prop)
         end
     end)
     
-    -- Кнопка для телепортации в стиле GUI (как тогглы)
     local teleportBtn = Instance.new("TextButton", frame)
     teleportBtn.Size = UDim2.new(0, 50, 0, 22)
     teleportBtn.Position = UDim2.new(1, -55, 0.5, -11)
-    teleportBtn.BackgroundColor3 = Color3.fromRGB(65, 65, 65)  -- Серый цвет как у активной вкладки
+    teleportBtn.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
     teleportBtn.Text = "GO"
     teleportBtn.TextColor3 = Color3.new(1, 1, 1)
     teleportBtn.Font = Enum.Font.SourceSansBold
     teleportBtn.TextSize = 13
     Instance.new("UICorner", teleportBtn).CornerRadius = UDim.new(0, 4)
     
-    -- Эффект при наведении
     teleportBtn.MouseEnter:Connect(function()
         teleportBtn.BackgroundColor3 = Color3.fromRGB(85, 85, 85)
     end)
@@ -305,7 +317,6 @@ local function createCoordinateInput(parent, name, prop)
     end)
     
     teleportBtn.MouseButton1Click:Connect(function()
-        -- Эффект нажатия
         teleportBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
         task.wait(0.1)
         teleportBtn.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
@@ -318,12 +329,10 @@ local function createCoordinateInput(parent, name, prop)
     end)
 end
 
--- Объявляем переменные для функций обновления UI
 local updateInvis = nil
 local ragdollConnection = nil
-local flingConnection = nil
+local flingThread = nil
 
--- Функция для отключения регдолла
 local function toggleRagdoll(state)
     local char = LocalPlayer.Character
     if not char then return end
@@ -353,30 +362,40 @@ local function toggleRagdoll(state)
     end
 end
 
--- Функция для Touch Fling
 local function toggleTouchFling(state)
     if state then
+        if not ReplicatedStorage:FindFirstChild("juisdfj0i32i0eidsuf0iok") then
+            local detection = Instance.new("Decal")
+            detection.Name = "juisdfj0i32i0eidsuf0iok"
+            detection.Parent = ReplicatedStorage
+        end
+        
         local function fling()
+            local lp = Players.LocalPlayer
+            local c, hrp, vel, movel = nil, nil, nil, 0.1
+        
             while Config.TouchFling do
                 RunService.Heartbeat:Wait()
-                local char = LocalPlayer.Character
-                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                c = lp.Character
+                hrp = c and c:FindFirstChild("HumanoidRootPart")
+        
                 if hrp then
-                    local vel = hrp.Velocity
-                    hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+                    vel = hrp.Velocity
+                    hrp.Velocity = vel * Config.FlingPower + Vector3.new(0, Config.FlingPower, 0)
                     RunService.RenderStepped:Wait()
                     hrp.Velocity = vel
                     RunService.Stepped:Wait()
-                    hrp.Velocity = vel + Vector3.new(0, 0.1, 0)
+                    hrp.Velocity = vel + Vector3.new(0, movel, 0)
+                    movel = -movel
                 end
             end
         end
         
-        task.spawn(fling)
+        flingThread = coroutine.create(fling)
+        coroutine.resume(flingThread)
     end
 end
 
--- Функция для невидимости
 local function toggleInvis(state)
     local char = LocalPlayer.Character
     if not char then return end
@@ -417,7 +436,6 @@ local function toggleInvis(state)
     end
 end
 
--- Создаем элементы UI для Character секции
 createInput(CharacterScroll, "Walk Speed", "Speed", "studs/s")
 createInput(CharacterScroll, "Jump Power", "JumpPower")
 createToggle(CharacterScroll, "Body Velocity Mode", "BV_Enabled")
@@ -440,18 +458,16 @@ end)
 createToggle(CharacterScroll, "Touch Fling", "TouchFling", function(state)
     toggleTouchFling(state)
 end)
+createInput(CharacterScroll, "Fling Power", "FlingPower", nil, true)
 
--- Сохраняем функцию обновления для Invisible
 local invisToggle, invisUpdate = createToggle(CharacterScroll, "Invisible", "Invis_Enabled", function(state)
     toggleInvis(state)
 end)
 updateInvis = invisUpdate
 
--- Секция Hitbox
 createToggle(HitboxScroll, "Hitbox", "Hitbox")
 createInput(HitboxScroll, "Hitbox Size", "HitboxSize", "studs")
 
--- Секция Teleport
 local teleportConnection = nil
 local TeleportToggle, updateTeleport = createToggle(TeleportScroll, "Teleport All Players", "TeleportEnabled", function(state)
     if state then
@@ -460,13 +476,14 @@ local TeleportToggle, updateTeleport = createToggle(TeleportScroll, "Teleport Al
             local root = char and char:FindFirstChild("HumanoidRootPart")
             if not root then return end
 
-            local targetPos = (root.CFrame * CFrame.new(0, 0, -Config.TeleportDistance)).Position
+            local offsetPosition = root.Position + (root.CFrame.LookVector * Config.TeleportDistance)
 
             for _, player in ipairs(Players:GetPlayers()) do
                 if player ~= LocalPlayer and player.Character then
                     local tRoot = player.Character:FindFirstChild("HumanoidRootPart")
                     if tRoot then
-                        tRoot.CFrame = CFrame.new(targetPos)
+                        tRoot.CFrame = CFrame.new(offsetPosition)
+                        tRoot.Position = offsetPosition
                     end
                 end
             end
