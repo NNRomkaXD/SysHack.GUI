@@ -12,15 +12,17 @@ local Config = {
     InfJump = false,
     Hitbox = false,
     HitboxSize = 10,
+    HitboxVisible = false,
     Invis_Enabled = false,
     Invis_Transparency = 0.75,
-    SeatTeleportPos = Vector3.new(9e9, 9e9, 9e9),
+    SeatTeleportPos = Vector3.new(5e5, 5e5, 5e5),
     TeleportEnabled = false,
     TeleportDistance = 10,
     DisableRagdoll = false,
     TouchFling = false,
-    FlingPower = 9e9,
-    TeleportTo = Vector3.new(0, 50, 0)
+    FlingPower = 5e5,
+    TeleportTo = Vector3.new(0, 50, 0),
+    ESP_Enabled = false
 }
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -55,7 +57,7 @@ Tabs.Position = UDim2.new(0, 10, 0, 40)
 Tabs.BackgroundTransparency = 1
 
 local CharacterTab = Instance.new("TextButton", Tabs)
-CharacterTab.Size = UDim2.new(0.33, -5, 1, 0)
+CharacterTab.Size = UDim2.new(0.25, -5, 1, 0)
 CharacterTab.Position = UDim2.new(0, 0, 0, 0)
 CharacterTab.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
 CharacterTab.Text = "CHARACTER"
@@ -65,8 +67,8 @@ CharacterTab.TextSize = 16
 Instance.new("UICorner", CharacterTab).CornerRadius = UDim.new(0, 4)
 
 local HitboxTab = Instance.new("TextButton", Tabs)
-HitboxTab.Size = UDim2.new(0.33, -5, 1, 0)
-HitboxTab.Position = UDim2.new(0.33, 5, 0, 0)
+HitboxTab.Size = UDim2.new(0.25, -5, 1, 0)
+HitboxTab.Position = UDim2.new(0.25, 5, 0, 0)
 HitboxTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 HitboxTab.Text = "HITBOX"
 HitboxTab.TextColor3 = Color3.new(1, 1, 1)
@@ -75,14 +77,24 @@ HitboxTab.TextSize = 16
 Instance.new("UICorner", HitboxTab).CornerRadius = UDim.new(0, 4)
 
 local TeleportTab = Instance.new("TextButton", Tabs)
-TeleportTab.Size = UDim2.new(0.33, -5, 1, 0)
-TeleportTab.Position = UDim2.new(0.66, 10, 0, 0)
+TeleportTab.Size = UDim2.new(0.25, -5, 1, 0)
+TeleportTab.Position = UDim2.new(0.5, 10, 0, 0)
 TeleportTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 TeleportTab.Text = "TELEPORT"
 TeleportTab.TextColor3 = Color3.new(1, 1, 1)
 TeleportTab.Font = Enum.Font.SourceSansBold
 TeleportTab.TextSize = 16
 Instance.new("UICorner", TeleportTab).CornerRadius = UDim.new(0, 4)
+
+local VisualTab = Instance.new("TextButton", Tabs)
+VisualTab.Size = UDim2.new(0.25, -5, 1, 0)
+VisualTab.Position = UDim2.new(0.75, 15, 0, 0)
+VisualTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+VisualTab.Text = "VISUAL"
+VisualTab.TextColor3 = Color3.new(1, 1, 1)
+VisualTab.Font = Enum.Font.SourceSansBold
+VisualTab.TextSize = 16
+Instance.new("UICorner", VisualTab).CornerRadius = UDim.new(0, 4)
 
 local Columns = Instance.new("Frame", Main)
 Columns.Size = UDim2.new(1, -20, 1, -80)
@@ -146,31 +158,67 @@ local TeleportList = Instance.new("UIListLayout", TeleportScroll)
 TeleportList.Padding = UDim.new(0, 5)
 TeleportList.SortOrder = Enum.SortOrder.LayoutOrder
 
+local VisualFrame = Instance.new("Frame", Columns)
+VisualFrame.Size = UDim2.new(1, 0, 1, 0)
+VisualFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+VisualFrame.Name = "VisualFrame"
+VisualFrame.Visible = false
+Instance.new("UICorner", VisualFrame).CornerRadius = UDim.new(0, 6)
+
+local VisualScroll = Instance.new("ScrollingFrame", VisualFrame)
+VisualScroll.Size = UDim2.new(1, -10, 1, -10)
+VisualScroll.Position = UDim2.new(0, 5, 0, 5)
+VisualScroll.BackgroundTransparency = 1
+VisualScroll.ScrollBarThickness = 4
+VisualScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+VisualScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local VisualList = Instance.new("UIListLayout", VisualScroll)
+VisualList.Padding = UDim.new(0, 5)
+VisualList.SortOrder = Enum.SortOrder.LayoutOrder
+
 CharacterTab.MouseButton1Click:Connect(function()
     CharacterFrame.Visible = true
     HitboxFrame.Visible = false
     TeleportFrame.Visible = false
+    VisualFrame.Visible = false
     CharacterTab.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
     HitboxTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     TeleportTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    VisualTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 end)
 
 HitboxTab.MouseButton1Click:Connect(function()
     CharacterFrame.Visible = false
     HitboxFrame.Visible = true
     TeleportFrame.Visible = false
+    VisualFrame.Visible = false
     CharacterTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     HitboxTab.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
     TeleportTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    VisualTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 end)
 
 TeleportTab.MouseButton1Click:Connect(function()
     CharacterFrame.Visible = false
     HitboxFrame.Visible = false
     TeleportFrame.Visible = true
+    VisualFrame.Visible = false
     CharacterTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     HitboxTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     TeleportTab.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
+    VisualTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+end)
+
+VisualTab.MouseButton1Click:Connect(function()
+    CharacterFrame.Visible = false
+    HitboxFrame.Visible = false
+    TeleportFrame.Visible = false
+    VisualFrame.Visible = true
+    CharacterTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    HitboxTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    TeleportTab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    VisualTab.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
 end)
 
 local function createToggle(parent, name, prop, callback)
@@ -233,30 +281,27 @@ local function createInput(parent, name, prop, suffix, isScientific)
     box.TextColor3 = Color3.new(1, 1, 1)
     box.Font = Enum.Font.SourceSans
     box.TextSize = 14
-    if isScientific then
-        box.Text = string.format("%.0e", Config[prop])
-    else
-        box.Text = tostring(Config[prop]) .. (suffix and " " .. suffix or "")
-    end
-    box.ClearTextOnFocus = false
+    box.Text = ""
+    box.PlaceholderText = tostring(Config[prop]) .. (suffix and " " .. suffix or "")
+    box.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+    box.ClearTextOnFocus = true
     Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
     
     box.FocusLost:Connect(function()
         local text = box.Text:gsub("%s+", "")
+        if text == "" then
+            box.Text = ""
+            box.PlaceholderText = tostring(Config[prop]) .. (suffix and " " .. suffix or "")
+            return
+        end
         local num = tonumber(text)
         if num then
             Config[prop] = num
-            if isScientific then
-                box.Text = string.format("%.0e", Config[prop])
-            else
-                box.Text = tostring(num) .. (suffix and " " .. suffix or "")
-            end
+            box.Text = ""
+            box.PlaceholderText = tostring(num) .. (suffix and " " .. suffix or "")
         else
-            if isScientific then
-                box.Text = string.format("%.0e", Config[prop])
-            else
-                box.Text = tostring(Config[prop]) .. (suffix and " " .. suffix or "")
-            end
+            box.Text = ""
+            box.PlaceholderText = tostring(Config[prop]) .. (suffix and " " .. suffix or "")
         end
     end)
 end
@@ -284,17 +329,25 @@ local function createCoordinateInput(parent, name, prop)
     box.TextColor3 = Color3.new(1, 1, 1)
     box.Font = Enum.Font.SourceSans
     box.TextSize = 14
-    box.Text = string.format("%.1f %.1f %.1f", Config[prop].X, Config[prop].Y, Config[prop].Z)
-    box.ClearTextOnFocus = false
+    box.Text = ""
+    box.PlaceholderText = string.format("%.1f %.1f %.1f", Config[prop].X, Config[prop].Y, Config[prop].Z)
+    box.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+    box.ClearTextOnFocus = true
     Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
     
     box.FocusLost:Connect(function()
+        if box.Text == "" then
+            box.PlaceholderText = string.format("%.1f %.1f %.1f", Config[prop].X, Config[prop].Y, Config[prop].Z)
+            return
+        end
         local x, y, z = box.Text:match("([%-%d%.]+)%s+([%-%d%.]+)%s+([%-%d%.]+)")
         if x and y and z then
             Config[prop] = Vector3.new(tonumber(x) or 0, tonumber(y) or 0, tonumber(z) or 0)
-            box.Text = string.format("%.1f %.1f %.1f", Config[prop].X, Config[prop].Y, Config[prop].Z)
+            box.Text = ""
+            box.PlaceholderText = string.format("%.1f %.1f %.1f", Config[prop].X, Config[prop].Y, Config[prop].Z)
         else
-            box.Text = string.format("%.1f %.1f %.1f", Config[prop].X, Config[prop].Y, Config[prop].Z)
+            box.Text = ""
+            box.PlaceholderText = string.format("%.1f %.1f %.1f", Config[prop].X, Config[prop].Y, Config[prop].Z)
         end
     end)
     
@@ -332,6 +385,7 @@ end
 local updateInvis = nil
 local ragdollConnection = nil
 local flingThread = nil
+local espConnection = nil
 
 local function toggleRagdoll(state)
     local char = LocalPlayer.Character
@@ -436,6 +490,41 @@ local function toggleInvis(state)
     end
 end
 
+local function toggleESP(state)
+    if state then
+        if espConnection then
+            espConnection:Disconnect()
+        end
+        
+        espConnection = RunService.RenderStepped:Connect(function()
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character then
+                    if not player.Character:FindFirstChild("GetReal") then
+                        local highlight = Instance.new("Highlight")
+                        highlight.RobloxLocked = true
+                        highlight.Name = "GetReal"
+                        highlight.Adornee = player.Character
+                        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                        highlight.FillColor = Color3.new(1, 1, 1)
+                        highlight.Parent = player.Character
+                    end
+                end
+            end
+        end)
+    else
+        if espConnection then
+            espConnection:Disconnect()
+            espConnection = nil
+        end
+        
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("GetReal") then
+                player.Character.GetReal:Destroy()
+            end
+        end
+    end
+end
+
 createInput(CharacterScroll, "Walk Speed", "Speed", "studs/s")
 createInput(CharacterScroll, "Jump Power", "JumpPower")
 createToggle(CharacterScroll, "Body Velocity Mode", "BV_Enabled")
@@ -467,6 +556,7 @@ updateInvis = invisUpdate
 
 createToggle(HitboxScroll, "Hitbox", "Hitbox")
 createInput(HitboxScroll, "Hitbox Size", "HitboxSize", "studs")
+createToggle(HitboxScroll, "Visible Hitbox", "HitboxVisible")
 
 local teleportConnection = nil
 local TeleportToggle, updateTeleport = createToggle(TeleportScroll, "Teleport All Players", "TeleportEnabled", function(state)
@@ -499,12 +589,19 @@ end)
 createInput(TeleportScroll, "Teleport Distance", "TeleportDistance", "studs")
 createCoordinateInput(TeleportScroll, "Teleport To (X Y Z)", "TeleportTo")
 
+createToggle(VisualScroll, "ESP", "ESP_Enabled", function(state)
+    toggleESP(state)
+end)
+
 local function resetHitboxes()
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
             p.Character.Head.Size = Vector3.new(1.2, 1.2, 1.2)
             p.Character.Head.Transparency = 0
             p.Character.Head.CanCollide = true
+            if p.Character.Head:FindFirstChild("Face") then
+                p.Character.Head.Face.Transparency = 0
+            end
         end
     end
 end
@@ -561,8 +658,11 @@ RunService.RenderStepped:Connect(function()
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
                 p.Character.Head.Size = Vector3.one * Config.HitboxSize
-                p.Character.Head.Transparency = 0.5
+                p.Character.Head.Transparency = Config.HitboxVisible and 0.5 or 1
                 p.Character.Head.CanCollide = false
+                if p.Character.Head:FindFirstChild("Face") then
+                    p.Character.Head.Face.Transparency = Config.HitboxVisible and 0.5 or 1
+                end
             end
         end
     else
@@ -600,6 +700,9 @@ Players.PlayerAdded:Connect(function(player)
                 character.Head.Size = Vector3.new(1.2, 1.2, 1.2)
                 character.Head.Transparency = 0
                 character.Head.CanCollide = true
+                if character.Head:FindFirstChild("Face") then
+                    character.Head.Face.Transparency = 0
+                end
             end
         end
         
