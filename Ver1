@@ -30,7 +30,7 @@ local Config = {
 }
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "FrulesGui"
+ScreenGui.Name = "FuriousPrimeGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game:GetService("CoreGui")
 
