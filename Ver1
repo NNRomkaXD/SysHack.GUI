@@ -994,36 +994,6 @@ RunService.RenderStepped:Connect(function()
     Camera.CFrame = Camera.CFrame:Lerp(LookAt, Config.AimbotSmoothness)
 end)
 
-local titleGui = Instance.new("ScreenGui")
-titleGui.Name = "FuriousPrimeTitle"
-titleGui.ResetOnSpawn = false
-titleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-titleGui.Parent = game:GetService("CoreGui")
-
-local titleFrame = Instance.new("Frame", titleGui)
-titleFrame.Size = UDim2.new(0, 220, 0, 40)
-titleFrame.Position = UDim2.new(0.5, -110, 0, 8)
-titleFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-titleFrame.BorderSizePixel = 2
-titleFrame.BorderColor3 = Color3.new(1, 1, 1)
-
-local titleCorner = Instance.new("UICorner", titleFrame)
-titleCorner.CornerRadius = UDim.new(0, 8)
-
-local titleLabel = Instance.new("TextLabel", titleFrame)
-titleLabel.Size = UDim2.new(1, 0, 1, 0)
-titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-titleLabel.Text = "FuriousPrime"
-titleLabel.TextColor3 = Color3.new(1, 1, 1)
-titleLabel.Font = Enum.Font.SourceSansBold
-titleLabel.TextSize = 20
-titleLabel.TextScaled = true
-titleLabel.BorderSizePixel = 0
-
-local titleLabelCorner = Instance.new("UICorner", titleLabel)
-titleLabelCorner.CornerRadius = UDim.new(0, 8)
-
 local characterWindow, characterContent, _ = createDraggableWindow("Character", 320, 500, 30, 55)
 local combatWindow, combatContent, _ = createDraggableWindow("Combat", 300, 380, 370, 55)
 local visualWindow, visualContent, _ = createDraggableWindow("Visual", 260, 130, 690, 55)
@@ -1195,7 +1165,6 @@ UserInputService.InputBegan:Connect(function(i, g)
         combatWindow.Visible = not allVisible
         visualWindow.Visible = not allVisible
         teleportWindow.Visible = not allVisible
-        titleFrame.Visible = not allVisible
     end
 end)
 
@@ -1243,4 +1212,3 @@ characterWindow.Visible = true
 combatWindow.Visible = true
 visualWindow.Visible = true
 teleportWindow.Visible = true
-titleFrame.Visible = true
