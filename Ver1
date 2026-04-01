@@ -23,8 +23,6 @@ local Config = {
     HitboxSize = 10,
     HitboxVisible = false,
     TeleportEnabled = false,
-    TeleportMode = "All",
-    TeleportTarget = "",
     TeleportDistance = 10,
     TeleportTo = Vector3.new(0, 50, 0),
     ESP_Enabled = false,
@@ -38,6 +36,8 @@ local Config = {
 }
 
 local AimbotHolding = false
+local GuiVisible = true
+local ActiveDropdown = nil
 
 local function GetClosestPlayerToCursor()
     local Target = nil
@@ -45,29 +45,19 @@ local function GetClosestPlayerToCursor()
     local MousePos = UserInputService:GetMouseLocation()
     
     for _, Player in pairs(Players:GetPlayers()) do
-        if Player == LocalPlayer then
-            continue
-        end
+        if Player == LocalPlayer then continue end
         
         local Character = Player.Character
-        if not Character then
-            continue
-        end
+        if not Character then continue end
         
         local TargetPart = Character:FindFirstChild(Config.AimbotTargetPart)
-        if not TargetPart then
-            continue
-        end
+        if not TargetPart then continue end
         
         local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-        if not Humanoid or Humanoid.Health <= 0 then
-            continue
-        end
+        if not Humanoid or Humanoid.Health <= 0 then continue end
         
         local ScreenPos, OnScreen = Camera:WorldToViewportPoint(TargetPart.Position)
-        if not OnScreen then
-            continue
-        end
+        if not OnScreen then continue end
         
         local Distance = (Vector2.new(MousePos.X, MousePos.Y) - Vector2.new(ScreenPos.X, ScreenPos.Y)).Magnitude
         
@@ -86,29 +76,19 @@ local function GetClosestPlayerToCharacter()
     local Character = LocalPlayer.Character
     local Root = Character and Character:FindFirstChild("HumanoidRootPart")
     
-    if not Root then
-        return nil
-    end
+    if not Root then return nil end
     
     for _, Player in pairs(Players:GetPlayers()) do
-        if Player == LocalPlayer then
-            continue
-        end
+        if Player == LocalPlayer then continue end
         
         local TargetCharacter = Player.Character
-        if not TargetCharacter then
-            continue
-        end
+        if not TargetCharacter then continue end
         
         local TargetRoot = TargetCharacter:FindFirstChild("HumanoidRootPart")
-        if not TargetRoot then
-            continue
-        end
+        if not TargetRoot then continue end
         
         local Humanoid = TargetCharacter:FindFirstChildOfClass("Humanoid")
-        if not Humanoid or Humanoid.Health <= 0 then
-            continue
-        end
+        if not Humanoid or Humanoid.Health <= 0 then continue end
         
         local Distance = (Root.Position - TargetRoot.Position).Magnitude
         
@@ -123,17 +103,23 @@ end
 
 local function GetBestTarget()
     local TargetByCursor = GetClosestPlayerToCursor()
-    if TargetByCursor then
-        return TargetByCursor
-    end
+    if TargetByCursor then return TargetByCursor end
     return GetClosestPlayerToCharacter()
 end
 
-local function createDraggableWindow(title, sizeX, sizeY, startX, startY)
+local function CloseAllDropdowns()
+    if ActiveDropdown then
+        ActiveDropdown.Visible = false
+        ActiveDropdown = nil
+    end
+end
+
+local function createWindow(title, sizeX, sizeY, startX, startY)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = title .. "GUI"
     ScreenGui.ResetOnSpawn = false
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+    ScreenGui.DisplayOrder = 1
     ScreenGui.Parent = game:GetService("CoreGui")
     
     local Main = Instance.new("Frame", ScreenGui)
@@ -144,22 +130,65 @@ local function createDraggableWindow(title, sizeX, sizeY, startX, startY)
     Main.Draggable = true
     Main.BorderSizePixel = 1
     Main.BorderColor3 = Color3.new(1, 1, 1)
+    Main.ClipsDescendants = false
     
     local mainCorner = Instance.new("UICorner", Main)
     mainCorner.CornerRadius = UDim.new(0, 6)
     
-    local titleBar = Instance.new("TextLabel", Main)
+    local titleBar = Instance.new("Frame", Main)
     titleBar.Size = UDim2.new(1, 0, 0, 28)
     titleBar.Position = UDim2.new(0, 0, 0, 0)
     titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    titleBar.Text = title
-    titleBar.TextColor3 = Color3.new(1, 1, 1)
-    titleBar.Font = Enum.Font.SourceSansBold
-    titleBar.TextSize = 14
     titleBar.BorderSizePixel = 0
+    titleBar.ZIndex = 2
     
     local titleCorner = Instance.new("UICorner", titleBar)
     titleCorner.CornerRadius = UDim.new(0, 6)
+    
+    local titleLabel = Instance.new("TextLabel", titleBar)
+    titleLabel.Size = UDim2.new(1, -80, 1, 0)
+    titleLabel.Position = UDim2.new(0, 10, 0, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = title
+    titleLabel.TextColor3 = Color3.new(1, 1, 1)
+    titleLabel.Font = Enum.Font.SourceSansBold
+    titleLabel.TextSize = 14
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.ZIndex = 2
+    
+    local buttonFrame = Instance.new("Frame", titleBar)
+    buttonFrame.Size = UDim2.new(0, 60, 1, 0)
+    buttonFrame.Position = UDim2.new(1, -60, 0, 0)
+    buttonFrame.BackgroundTransparency = 1
+    buttonFrame.ZIndex = 2
+    
+    local minimizeBtn = Instance.new("TextButton", buttonFrame)
+    minimizeBtn.Size = UDim2.new(0, 28, 0, 22)
+    minimizeBtn.Position = UDim2.new(0, 0, 0.5, -11)
+    minimizeBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    minimizeBtn.Text = "─"
+    minimizeBtn.TextColor3 = Color3.new(1, 1, 1)
+    minimizeBtn.Font = Enum.Font.SourceSansBold
+    minimizeBtn.TextSize = 18
+    minimizeBtn.BorderSizePixel = 0
+    minimizeBtn.ZIndex = 2
+    
+    local minCorner = Instance.new("UICorner", minimizeBtn)
+    minCorner.CornerRadius = UDim.new(0, 4)
+    
+    local closeBtn = Instance.new("TextButton", buttonFrame)
+    closeBtn.Size = UDim2.new(0, 28, 0, 22)
+    closeBtn.Position = UDim2.new(1, -28, 0.5, -11)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    closeBtn.Text = "✕"
+    closeBtn.TextColor3 = Color3.new(1, 1, 1)
+    closeBtn.Font = Enum.Font.SourceSansBold
+    closeBtn.TextSize = 14
+    closeBtn.BorderSizePixel = 0
+    closeBtn.ZIndex = 2
+    
+    local closeCorner = Instance.new("UICorner", closeBtn)
+    closeCorner.CornerRadius = UDim.new(0, 4)
     
     local content = Instance.new("ScrollingFrame", Main)
     content.Size = UDim2.new(1, -10, 1, -38)
@@ -169,12 +198,32 @@ local function createDraggableWindow(title, sizeX, sizeY, startX, startY)
     content.CanvasSize = UDim2.new(0, 0, 0, 0)
     content.AutomaticCanvasSize = Enum.AutomaticSize.Y
     content.BorderSizePixel = 0
+    content.ClipsDescendants = true
+    content.ZIndex = 1
     
     local layout = Instance.new("UIListLayout", content)
     layout.Padding = UDim.new(0, 6)
     layout.SortOrder = Enum.SortOrder.LayoutOrder
     
-    return Main, content, layout
+    local minimized = false
+    local originalSize = Main.Size
+    
+    minimizeBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        if minimized then
+            content.Visible = false
+            Main.Size = UDim2.new(0, sizeX, 0, 28)
+        else
+            content.Visible = true
+            Main.Size = originalSize
+        end
+    end)
+    
+    closeBtn.MouseButton1Click:Connect(function()
+        Main.Visible = false
+    end)
+    
+    return Main, content, layout, ScreenGui
 end
 
 local function createSection(parent, title)
@@ -184,6 +233,7 @@ local function createSection(parent, title)
     section.AutomaticSize = Enum.AutomaticSize.Y
     section.BorderSizePixel = 1
     section.BorderColor3 = Color3.fromRGB(45, 45, 45)
+    section.ClipsDescendants = false
     
     local sectionCorner = Instance.new("UICorner", section)
     sectionCorner.CornerRadius = UDim.new(0, 4)
@@ -198,6 +248,7 @@ local function createSection(parent, title)
     header.TextSize = 13
     header.TextXAlignment = Enum.TextXAlignment.Center
     header.BorderSizePixel = 0
+    header.ZIndex = 2
     
     local headerCorner = Instance.new("UICorner", header)
     headerCorner.CornerRadius = UDim.new(0, 4)
@@ -207,6 +258,7 @@ local function createSection(parent, title)
     content.Position = UDim2.new(0, 5, 0, 26)
     content.BackgroundTransparency = 1
     content.AutomaticSize = Enum.AutomaticSize.Y
+    content.ClipsDescendants = false
     
     local list = Instance.new("UIListLayout", content)
     list.Padding = UDim.new(0, 4)
@@ -222,6 +274,7 @@ local function createToggle(parent, name, prop, callback)
     btn.Text = ""
     btn.AutoButtonColor = false
     btn.BorderSizePixel = 0
+    btn.ZIndex = 2
     
     local btnCorner = Instance.new("UICorner", btn)
     btnCorner.CornerRadius = UDim.new(0, 4)
@@ -235,12 +288,14 @@ local function createToggle(parent, name, prop, callback)
     label.Font = Enum.Font.SourceSans
     label.TextSize = 13
     label.TextXAlignment = Enum.TextXAlignment.Left
+    label.ZIndex = 2
     
     local track = Instance.new("Frame", btn)
     track.Size = UDim2.new(0, 36, 0, 18)
     track.Position = UDim2.new(1, -44, 0.5, -9)
     track.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     track.BorderSizePixel = 0
+    track.ZIndex = 2
     
     local trackCorner = Instance.new("UICorner", track)
     trackCorner.CornerRadius = UDim.new(1, 0)
@@ -248,8 +303,9 @@ local function createToggle(parent, name, prop, callback)
     local thumb = Instance.new("Frame", track)
     thumb.Size = UDim2.new(0, 14, 0, 14)
     thumb.Position = Config[prop] and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
-    thumb.BackgroundColor3 = Config[prop] and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(200, 200, 200)
+    thumb.BackgroundColor3 = Config[prop] and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(180, 180, 180)
     thumb.BorderSizePixel = 0
+    thumb.ZIndex = 3
     
     local thumbCorner = Instance.new("UICorner", thumb)
     thumbCorner.CornerRadius = UDim.new(1, 0)
@@ -258,7 +314,7 @@ local function createToggle(parent, name, prop, callback)
         local targetPos = Config[prop] and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
         local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
         local posTween = TweenService:Create(thumb, tweenInfo, {Position = targetPos})
-        local colorTween = TweenService:Create(thumb, tweenInfo, {BackgroundColor3 = Config[prop] and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(200, 200, 200)})
+        local colorTween = TweenService:Create(thumb, tweenInfo, {BackgroundColor3 = Config[prop] and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(180, 180, 180)})
         posTween:Play()
         colorTween:Play()
     end
@@ -277,6 +333,8 @@ local function createDropdown(parent, name, prop, options)
     frame.Size = UDim2.new(1, 0, 0, 26)
     frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     frame.BorderSizePixel = 0
+    frame.ClipsDescendants = false
+    frame.ZIndex = 10
     
     local frameCorner = Instance.new("UICorner", frame)
     frameCorner.CornerRadius = UDim.new(0, 4)
@@ -290,27 +348,31 @@ local function createDropdown(parent, name, prop, options)
     label.Font = Enum.Font.SourceSans
     label.TextSize = 13
     label.TextXAlignment = Enum.TextXAlignment.Left
+    label.ZIndex = 10
     
-    local dropdown = Instance.new("TextButton", frame)
-    dropdown.Size = UDim2.new(0.5, -15, 1, -6)
-    dropdown.Position = UDim2.new(0.5, 5, 0, 3)
-    dropdown.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    dropdown.TextColor3 = Color3.new(1, 1, 1)
-    dropdown.Font = Enum.Font.SourceSans
-    dropdown.TextSize = 13
-    dropdown.Text = Config[prop]
-    dropdown.BorderSizePixel = 0
+    local dropdownBtn = Instance.new("TextButton", frame)
+    dropdownBtn.Size = UDim2.new(0.5, -15, 1, -6)
+    dropdownBtn.Position = UDim2.new(0.5, 5, 0, 3)
+    dropdownBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    dropdownBtn.TextColor3 = Color3.new(1, 1, 1)
+    dropdownBtn.Font = Enum.Font.SourceSans
+    dropdownBtn.TextSize = 13
+    dropdownBtn.Text = Config[prop]
+    dropdownBtn.BorderSizePixel = 0
+    dropdownBtn.ZIndex = 10
     
-    local dropdownCorner = Instance.new("UICorner", dropdown)
+    local dropdownCorner = Instance.new("UICorner", dropdownBtn)
     dropdownCorner.CornerRadius = UDim.new(0, 4)
     
     local menu = Instance.new("Frame", frame)
     menu.Size = UDim2.new(0.5, -15, 0, #options * 22)
     menu.Position = UDim2.new(0.5, 5, 1, 3)
-    menu.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    menu.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     menu.Visible = false
-    menu.ZIndex = 10
-    menu.BorderSizePixel = 0
+    menu.ZIndex = 100
+    menu.BorderSizePixel = 1
+    menu.BorderColor3 = Color3.fromRGB(80, 80, 80)
+    menu.ClipsDescendants = false
     
     local menuCorner = Instance.new("UICorner", menu)
     menuCorner.CornerRadius = UDim.new(0, 4)
@@ -321,157 +383,35 @@ local function createDropdown(parent, name, prop, options)
     
     for _, option in ipairs(options) do
         local btn = Instance.new("TextButton", menu)
-        btn.Size = UDim2.new(1, -10, 0, 20)
+        btn.Size = UDim2.new(1, -10, 0, 22)
         btn.Position = UDim2.new(0, 5, 0, 0)
-        btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        btn.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
         btn.Text = option
         btn.TextColor3 = Color3.new(1, 1, 1)
         btn.Font = Enum.Font.SourceSans
         btn.TextSize = 12
-        btn.ZIndex = 11
+        btn.ZIndex = 101
         btn.BorderSizePixel = 0
         
         local btnCorner = Instance.new("UICorner", btn)
         btnCorner.CornerRadius = UDim.new(0, 4)
         
-        btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end)
-        btn.MouseLeave:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60) end)
+        btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(75, 75, 75) end)
+        btn.MouseLeave:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(55, 55, 55) end)
         btn.MouseButton1Click:Connect(function()
             Config[prop] = option
-            dropdown.Text = option
-            menu.Visible = false
+            dropdownBtn.Text = option
+            CloseAllDropdowns()
         end)
     end
     
-    dropdown.MouseButton1Click:Connect(function() menu.Visible = not menu.Visible end)
-    
-    UserInputService.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            local pos = UserInputService.GetMouseLocation()
-            local absPos = frame.AbsolutePosition
-            local absSize = frame.AbsoluteSize
-            local menuPos = menu.AbsolutePosition
-            local menuSize = menu.AbsoluteSize
-            
-            if not (pos.X >= absPos.X and pos.X <= absPos.X + absSize.X and
-                    pos.Y >= absPos.Y and pos.Y <= absPos.Y + absSize.Y) and
-               not (pos.X >= menuPos.X and pos.X <= menuPos.X + menuSize.X and
-                    pos.Y >= menuPos.Y and pos.Y <= menuPos.Y + menuSize.Y) then
-                menu.Visible = false
-            end
-        end
-    end)
-    
-    return frame
-end
-
-local function createPlayerDropdown(parent, name, prop)
-    local frame = Instance.new("Frame", parent)
-    frame.Size = UDim2.new(1, 0, 0, 26)
-    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    frame.BorderSizePixel = 0
-    
-    local frameCorner = Instance.new("UICorner", frame)
-    frameCorner.CornerRadius = UDim.new(0, 4)
-    
-    local label = Instance.new("TextLabel", frame)
-    label.Size = UDim2.new(0.5, -5, 1, 0)
-    label.Position = UDim2.new(0, 8, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = name
-    label.TextColor3 = Color3.new(1, 1, 1)
-    label.Font = Enum.Font.SourceSans
-    label.TextSize = 13
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local dropdown = Instance.new("TextButton", frame)
-    dropdown.Size = UDim2.new(0.5, -15, 1, -6)
-    dropdown.Position = UDim2.new(0.5, 5, 0, 3)
-    dropdown.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    dropdown.TextColor3 = Color3.new(1, 1, 1)
-    dropdown.Font = Enum.Font.SourceSans
-    dropdown.TextSize = 13
-    dropdown.Text = Config[prop] == "" and "select player" or Config[prop]
-    dropdown.BorderSizePixel = 0
-    
-    local dropdownCorner = Instance.new("UICorner", dropdown)
-    dropdownCorner.CornerRadius = UDim.new(0, 4)
-    
-    local menu = Instance.new("Frame", frame)
-    menu.Size = UDim2.new(0.5, -15, 0, 0)
-    menu.Position = UDim2.new(0.5, 5, 1, 3)
-    menu.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    menu.Visible = false
-    menu.ZIndex = 10
-    menu.AutomaticSize = Enum.AutomaticSize.Y
-    menu.BorderSizePixel = 0
-    
-    local menuCorner = Instance.new("UICorner", menu)
-    menuCorner.CornerRadius = UDim.new(0, 4)
-    
-    local menuList = Instance.new("UIListLayout", menu)
-    menuList.Padding = UDim.new(0, 2)
-    menuList.SortOrder = Enum.SortOrder.LayoutOrder
-    
-    local function updatePlayerList()
-        for _, v in pairs(menu:GetChildren()) do
-            if v:IsA("TextButton") then v:Destroy() end
-        end
-        
-        local players = {}
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then table.insert(players, player.Name) end
-        end
-        table.sort(players)
-        
-        for _, playerName in ipairs(players) do
-            local btn = Instance.new("TextButton", menu)
-            btn.Size = UDim2.new(1, -10, 0, 20)
-            btn.Position = UDim2.new(0, 5, 0, 0)
-            btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-            btn.Text = playerName
-            btn.TextColor3 = Color3.new(1, 1, 1)
-            btn.Font = Enum.Font.SourceSans
-            btn.TextSize = 12
-            btn.ZIndex = 11
-            btn.BorderSizePixel = 0
-            
-            local btnCorner = Instance.new("UICorner", btn)
-            btnCorner.CornerRadius = UDim.new(0, 4)
-            
-            btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80) end)
-            btn.MouseLeave:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60) end)
-            btn.MouseButton1Click:Connect(function()
-                Config[prop] = playerName
-                dropdown.Text = playerName
-                menu.Visible = false
-            end)
-        end
-    end
-    
-    updatePlayerList()
-    Players.PlayerAdded:Connect(updatePlayerList)
-    Players.PlayerRemoving:Connect(updatePlayerList)
-    
-    dropdown.MouseButton1Click:Connect(function()
-        updatePlayerList()
-        menu.Visible = not menu.Visible
-    end)
-    
-    UserInputService.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            local pos = UserInputService.GetMouseLocation()
-            local absPos = frame.AbsolutePosition
-            local absSize = frame.AbsoluteSize
-            local menuPos = menu.AbsolutePosition
-            local menuSize = menu.AbsoluteSize
-            
-            if not (pos.X >= absPos.X and pos.X <= absPos.X + absSize.X and
-                    pos.Y >= absPos.Y and pos.Y <= absPos.Y + absSize.Y) and
-               not (pos.X >= menuPos.X and pos.X <= menuPos.X + menuSize.X and
-                    pos.Y >= menuPos.Y and pos.Y <= menuPos.Y + menuSize.Y) then
-                menu.Visible = false
-            end
+    dropdownBtn.MouseButton1Click:Connect(function()
+        if ActiveDropdown == menu then
+            CloseAllDropdowns()
+        else
+            CloseAllDropdowns()
+            menu.Visible = true
+            ActiveDropdown = menu
         end
     end)
     
@@ -483,6 +423,7 @@ local function createSlider(parent, name, prop, min, max, suffix)
     frame.Size = UDim2.new(1, 0, 0, 50)
     frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     frame.BorderSizePixel = 0
+    frame.ZIndex = 2
     
     local frameCorner = Instance.new("UICorner", frame)
     frameCorner.CornerRadius = UDim.new(0, 4)
@@ -496,6 +437,7 @@ local function createSlider(parent, name, prop, min, max, suffix)
     label.Font = Enum.Font.SourceSans
     label.TextSize = 13
     label.TextXAlignment = Enum.TextXAlignment.Left
+    label.ZIndex = 2
     
     local valueLabel = Instance.new("TextLabel", frame)
     valueLabel.Size = UDim2.new(0, 50, 0, 20)
@@ -506,6 +448,8 @@ local function createSlider(parent, name, prop, min, max, suffix)
     valueLabel.Font = Enum.Font.SourceSans
     valueLabel.TextSize = 12
     valueLabel.BorderSizePixel = 0
+    valueLabel.ZIndex = 2
+    
     local valueCorner = Instance.new("UICorner", valueLabel)
     valueCorner.CornerRadius = UDim.new(0, 4)
     
@@ -514,6 +458,8 @@ local function createSlider(parent, name, prop, min, max, suffix)
     slider.Position = UDim2.new(0, 10, 0, 32)
     slider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     slider.BorderSizePixel = 0
+    slider.ZIndex = 2
+    
     local sliderCorner = Instance.new("UICorner", slider)
     sliderCorner.CornerRadius = UDim.new(1, 0)
     
@@ -521,6 +467,8 @@ local function createSlider(parent, name, prop, min, max, suffix)
     fill.Size = UDim2.new((Config[prop] - min) / (max - min), 0, 1, 0)
     fill.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
     fill.BorderSizePixel = 0
+    fill.ZIndex = 2
+    
     local fillCorner = Instance.new("UICorner", fill)
     fillCorner.CornerRadius = UDim.new(1, 0)
     
@@ -530,6 +478,8 @@ local function createSlider(parent, name, prop, min, max, suffix)
     button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     button.Text = ""
     button.BorderSizePixel = 0
+    button.ZIndex = 3
+    
     local buttonCorner = Instance.new("UICorner", button)
     buttonCorner.CornerRadius = UDim.new(1, 0)
     
@@ -573,6 +523,7 @@ local function createModeSelector(parent, name)
     frame.Size = UDim2.new(1, 0, 0, 60)
     frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     frame.BorderSizePixel = 0
+    frame.ZIndex = 2
     
     local frameCorner = Instance.new("UICorner", frame)
     frameCorner.CornerRadius = UDim.new(0, 4)
@@ -586,11 +537,13 @@ local function createModeSelector(parent, name)
     label.Font = Enum.Font.SourceSans
     label.TextSize = 13
     label.TextXAlignment = Enum.TextXAlignment.Left
+    label.ZIndex = 2
     
     local selectorFrame = Instance.new("Frame", frame)
     selectorFrame.Size = UDim2.new(1, -10, 0, 28)
     selectorFrame.Position = UDim2.new(0, 5, 0, 28)
     selectorFrame.BackgroundTransparency = 1
+    selectorFrame.ZIndex = 2
     
     local leftArrow = Instance.new("TextButton", selectorFrame)
     leftArrow.Size = UDim2.new(0, 30, 1, 0)
@@ -601,6 +554,7 @@ local function createModeSelector(parent, name)
     leftArrow.Font = Enum.Font.SourceSansBold
     leftArrow.TextSize = 16
     leftArrow.BorderSizePixel = 0
+    leftArrow.ZIndex = 2
     
     local leftCorner = Instance.new("UICorner", leftArrow)
     leftCorner.CornerRadius = UDim.new(0, 4)
@@ -614,6 +568,7 @@ local function createModeSelector(parent, name)
     modeText.Font = Enum.Font.SourceSansBold
     modeText.TextSize = 12
     modeText.BorderSizePixel = 0
+    modeText.ZIndex = 2
     
     local modeCorner = Instance.new("UICorner", modeText)
     modeCorner.CornerRadius = UDim.new(0, 4)
@@ -627,6 +582,7 @@ local function createModeSelector(parent, name)
     rightArrow.Font = Enum.Font.SourceSansBold
     rightArrow.TextSize = 16
     rightArrow.BorderSizePixel = 0
+    rightArrow.ZIndex = 2
     
     local rightCorner = Instance.new("UICorner", rightArrow)
     rightCorner.CornerRadius = UDim.new(0, 4)
@@ -643,10 +599,11 @@ local function createModeSelector(parent, name)
     speedBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
     speedBox.ClearTextOnFocus = true
     speedBox.BorderSizePixel = 0
+    speedBox.ZIndex = 2
+    speedBox.Visible = Config.MovementMode == "WalkSpeed"
     
     local speedCorner = Instance.new("UICorner", speedBox)
     speedCorner.CornerRadius = UDim.new(0, 4)
-    speedBox.Visible = Config.MovementMode == "WalkSpeed"
     
     local bvBox = Instance.new("TextBox", selectorFrame)
     bvBox.Size = UDim2.new(0, 80, 1, 0)
@@ -660,10 +617,11 @@ local function createModeSelector(parent, name)
     bvBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
     bvBox.ClearTextOnFocus = true
     bvBox.BorderSizePixel = 0
+    bvBox.ZIndex = 2
+    bvBox.Visible = Config.MovementMode == "BodyVelocity"
     
     local bvCorner = Instance.new("UICorner", bvBox)
     bvCorner.CornerRadius = UDim.new(0, 4)
-    bvBox.Visible = Config.MovementMode == "BodyVelocity"
     
     local suffixLabel = Instance.new("TextLabel", selectorFrame)
     suffixLabel.Size = UDim2.new(0, 30, 1, 0)
@@ -674,6 +632,7 @@ local function createModeSelector(parent, name)
     suffixLabel.Font = Enum.Font.SourceSans
     suffixLabel.TextSize = 11
     suffixLabel.TextXAlignment = Enum.TextXAlignment.Left
+    suffixLabel.ZIndex = 2
     
     local function updateModeUI()
         modeText.Text = Config.MovementMode
@@ -743,6 +702,7 @@ local function createCoordinateInput(parent, name, prop)
     frame.Size = UDim2.new(1, 0, 0, 26)
     frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     frame.BorderSizePixel = 0
+    frame.ZIndex = 2
     
     local frameCorner = Instance.new("UICorner", frame)
     frameCorner.CornerRadius = UDim.new(0, 4)
@@ -756,6 +716,7 @@ local function createCoordinateInput(parent, name, prop)
     label.Font = Enum.Font.SourceSans
     label.TextSize = 13
     label.TextXAlignment = Enum.TextXAlignment.Left
+    label.ZIndex = 2
     
     local box = Instance.new("TextBox", frame)
     box.Size = UDim2.new(0.45, -15, 1, -6)
@@ -769,6 +730,7 @@ local function createCoordinateInput(parent, name, prop)
     box.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
     box.ClearTextOnFocus = true
     box.BorderSizePixel = 0
+    box.ZIndex = 2
     
     local boxCorner = Instance.new("UICorner", box)
     boxCorner.CornerRadius = UDim.new(0, 4)
@@ -782,6 +744,7 @@ local function createCoordinateInput(parent, name, prop)
     teleportBtn.Font = Enum.Font.SourceSansBold
     teleportBtn.TextSize = 12
     teleportBtn.BorderSizePixel = 0
+    teleportBtn.ZIndex = 2
     
     local btnCorner = Instance.new("UICorner", teleportBtn)
     btnCorner.CornerRadius = UDim.new(0, 4)
@@ -957,9 +920,28 @@ local function resetHitboxes()
     end
 end
 
+local function teleportPlayers()
+    local char, root = LocalPlayer.Character, LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not (char and root) then return end
+    local offsetPosition = root.Position + (root.CFrame.LookVector * Config.TeleportDistance)
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local tRoot = player.Character:FindFirstChild("HumanoidRootPart")
+            if tRoot then 
+                tRoot.CFrame = CFrame.new(offsetPosition)
+                tRoot.Velocity = Vector3.zero
+            end
+        end
+    end
+end
+
 UserInputService.InputBegan:Connect(function(Input, Processed)
     if not Processed and Input.UserInputType == Enum.UserInputType.MouseButton2 then
         AimbotHolding = true
+    end
+    if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+        CloseAllDropdowns()
     end
 end)
 
@@ -970,34 +952,26 @@ UserInputService.InputEnded:Connect(function(Input)
 end)
 
 RunService.RenderStepped:Connect(function()
-    if not Config.AimbotEnabled or not AimbotHolding then
-        return
-    end
+    if not Config.AimbotEnabled or not AimbotHolding then return end
     
     local Target = GetBestTarget()
-    if not Target then
-        return
-    end
+    if not Target then return end
     
     local Character = Target.Character
-    if not Character then
-        return
-    end
+    if not Character then return end
     
     local TargetPart = Character:FindFirstChild(Config.AimbotTargetPart)
-    if not TargetPart then
-        return
-    end
+    if not TargetPart then return end
     
     local TargetPosition = TargetPart.Position
     local LookAt = CFrame.new(Camera.CFrame.Position, TargetPosition)
     Camera.CFrame = Camera.CFrame:Lerp(LookAt, Config.AimbotSmoothness)
 end)
 
-local characterWindow, characterContent, _ = createDraggableWindow("Character", 320, 500, 30, 55)
-local combatWindow, combatContent, _ = createDraggableWindow("Combat", 300, 380, 370, 55)
-local visualWindow, visualContent, _ = createDraggableWindow("Visual", 260, 130, 690, 55)
-local teleportWindow, teleportContent, _ = createDraggableWindow("Teleport", 300, 350, 30, 580)
+local characterWindow, characterContent, _, characterGui = createWindow("Character", 320, 500, 30, 55)
+local combatWindow, combatContent, _, combatGui = createWindow("Combat", 300, 380, 370, 55)
+local visualWindow, visualContent, _, visualGui = createWindow("Visual", 260, 130, 690, 55)
+local teleportWindow, teleportContent, _, teleportGui = createWindow("Teleport", 300, 200, 30, 580)
 
 local physicsSection = createSection(characterContent, "Physics")
 createModeSelector(physicsSection, "Movement Mode")
@@ -1011,9 +985,7 @@ createToggle(abilitiesSection, "No Clip", "Noclip", function(state)
         local char = LocalPlayer.Character
         if char then
             for _, v in pairs(char:GetDescendants()) do
-                if v:IsA("BasePart") then
-                    v.CanCollide = false
-                end
+                if v:IsA("BasePart") then v.CanCollide = false end
             end
         end
     end
@@ -1031,8 +1003,7 @@ createSlider(spinSection, "Spin Speed", "Spin_Speed", 0, 360, "deg/s")
 local aimbotSection = createSection(combatContent, "Aimbot")
 createToggle(aimbotSection, "Enable Aimbot", "AimbotEnabled")
 createSlider(aimbotSection, "Smoothness", "AimbotSmoothness", 0, 1, "")
-local targetPartDropdown = createDropdown(aimbotSection, "Target Part", "AimbotTargetPart", {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"})
-targetPartDropdown.ZIndex = 20
+createDropdown(aimbotSection, "Target Part", "AimbotTargetPart", {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"})
 createSlider(aimbotSection, "Field Of View", "AimbotFieldOfView", 50, 500, "")
 
 local hitboxSection = createSection(combatContent, "Hitbox")
@@ -1043,38 +1014,16 @@ createToggle(hitboxSection, "Visible Hitbox", "HitboxVisible")
 local visualSection = createSection(visualContent, "ESP")
 createToggle(visualSection, "ESP", "ESP_Enabled", toggleESP)
 
-local teleportSection = createSection(teleportContent, "Teleport Players")
-createDropdown(teleportSection, "Teleport Mode", "TeleportMode", {"All", "Target"})
-createPlayerDropdown(teleportSection, "Target Player", "TeleportTarget")
-local TeleportToggle, updateTeleport = createToggle(teleportSection, "Teleport Players", "TeleportEnabled", function(state)
+local teleportSection = createSection(teleportContent, "Teleport")
+createToggle(teleportSection, "Teleport Players", "TeleportEnabled", function(state)
     if state then
-        teleportConnection = RunService.Heartbeat:Connect(function()
-            local char, root = LocalPlayer.Character, LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if not (char and root) then return end
-            local offsetPosition = root.Position + (root.CFrame.LookVector * Config.TeleportDistance)
-            if Config.TeleportMode == "All" then
-                for _, player in ipairs(Players:GetPlayers()) do
-                    if player ~= LocalPlayer and player.Character then
-                        local tRoot = player.Character:FindFirstChild("HumanoidRootPart")
-                        if tRoot then 
-                            tRoot.CFrame = CFrame.new(offsetPosition)
-                            tRoot.Velocity = Vector3.zero
-                        end
-                    end
-                end
-            elseif Config.TeleportMode == "Target" and Config.TeleportTarget ~= "" then
-                local target = Players:FindFirstChild(Config.TeleportTarget)
-                if target and target.Character then
-                    local tRoot = target.Character:FindFirstChild("HumanoidRootPart")
-                    if tRoot then 
-                        tRoot.CFrame = CFrame.new(offsetPosition)
-                        tRoot.Velocity = Vector3.zero
-                    end
-                end
-            end
-        end)
+        if teleportConnection then teleportConnection:Disconnect() end
+        teleportConnection = RunService.Heartbeat:Connect(teleportPlayers)
     else
-        if teleportConnection then teleportConnection:Disconnect() teleportConnection = nil end
+        if teleportConnection then 
+            teleportConnection:Disconnect() 
+            teleportConnection = nil 
+        end
     end
 end)
 createSlider(teleportSection, "Teleport Distance", "TeleportDistance", 1, 100, "s")
@@ -1109,15 +1058,11 @@ RunService.Heartbeat:Connect(function()
 
     if Config.Noclip then
         for _, v in pairs(char:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.CanCollide = false
-            end
+            if v:IsA("BasePart") then v.CanCollide = false end
         end
     else
         for _, v in pairs(char:GetDescendants()) do
-            if v:IsA("BasePart") and not v.CanCollide then
-                v.CanCollide = true
-            end
+            if v:IsA("BasePart") and not v.CanCollide then v.CanCollide = true end
         end
     end
 end)
@@ -1148,9 +1093,7 @@ end)
 UserInputService.JumpRequest:Connect(function()
     if Config.InfJump then
         local char, hum = LocalPlayer.Character, LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
-        if hum then
-            hum:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
     end
 end)
 
@@ -1160,11 +1103,18 @@ UserInputService.InputBegan:Connect(function(i, g)
         Config.Invis_Enabled = not Config.Invis_Enabled
         toggleInvis(Config.Invis_Enabled)
     elseif i.KeyCode == Enum.KeyCode.Insert then
-        local allVisible = characterWindow.Visible
-        characterWindow.Visible = not allVisible
-        combatWindow.Visible = not allVisible
-        visualWindow.Visible = not allVisible
-        teleportWindow.Visible = not allVisible
+        GuiVisible = not GuiVisible
+        if GuiVisible then
+            characterWindow.Visible = true
+            combatWindow.Visible = true
+            visualWindow.Visible = true
+            teleportWindow.Visible = true
+        else
+            characterWindow.Visible = false
+            combatWindow.Visible = false
+            visualWindow.Visible = false
+            teleportWindow.Visible = false
+        end
     end
 end)
 
@@ -1176,13 +1126,9 @@ Players.PlayerAdded:Connect(function(player)
             head.Size = Vector3.new(1.2, 1.2, 1.2)
             head.Transparency = 0
             head.CanCollide = true
-            if head:FindFirstChild("Face") then
-                head.Face.Transparency = 0
-            end
+            if head:FindFirstChild("Face") then head.Face.Transparency = 0 end
             for _, child in pairs(head:GetChildren()) do
-                if child:IsA("Decal") or child:IsA("Texture") then
-                    child.Transparency = 0
-                end
+                if child:IsA("Decal") or child:IsA("Texture") then child.Transparency = 0 end
             end
         end
         if Config.DisableRagdoll then
@@ -1190,9 +1136,7 @@ Players.PlayerAdded:Connect(function(player)
             toggleRagdoll(true)
         end
         if Config.Spin_Enabled then
-            if spinConnection then
-                spinConnection:Disconnect()
-            end
+            if spinConnection then spinConnection:Disconnect() end
             toggleSpin(true)
         end
     end)
@@ -1201,9 +1145,7 @@ end)
 LocalPlayer.CharacterAdded:Connect(function(character)
     task.wait(0.5)
     if Config.Spin_Enabled then
-        if spinConnection then
-            spinConnection:Disconnect()
-        end
+        if spinConnection then spinConnection:Disconnect() end
         toggleSpin(true)
     end
 end)
