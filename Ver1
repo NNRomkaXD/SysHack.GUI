@@ -38,6 +38,9 @@ local Config = {
 local AimbotHolding = false
 local GuiVisible = true
 local ActiveDropdown = nil
+local updateInvis, ragdollConnection, flingThread, espConnection, teleportConnection = nil
+local spinConnection = nil
+local currentBodyVelocity = nil
 
 local function GetClosestPlayerToCursor()
     local Target = nil
@@ -520,28 +523,28 @@ local function createSlider(parent, name, prop, min, max, suffix, decimal)
     return frame
 end
 
-local function createModeSelector(parent, name)
-    local frame = Instance.new("Frame", parent)
-    frame.Size = UDim2.new(1, 0, 0, 60)
-    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    frame.BorderSizePixel = 0
-    frame.ZIndex = 2
+local function createSpeedControl(parent)
+    local modeFrame = Instance.new("Frame", parent)
+    modeFrame.Size = UDim2.new(1, 0, 0, 60)
+    modeFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    modeFrame.BorderSizePixel = 0
+    modeFrame.ZIndex = 2
     
-    local frameCorner = Instance.new("UICorner", frame)
-    frameCorner.CornerRadius = UDim.new(0, 4)
+    local modeCorner = Instance.new("UICorner", modeFrame)
+    modeCorner.CornerRadius = UDim.new(0, 4)
     
-    local label = Instance.new("TextLabel", frame)
-    label.Size = UDim2.new(1, -10, 0, 20)
-    label.Position = UDim2.new(0, 8, 0, 4)
-    label.BackgroundTransparency = 1
-    label.Text = name
-    label.TextColor3 = Color3.new(1, 1, 1)
-    label.Font = Enum.Font.SourceSans
-    label.TextSize = 13
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.ZIndex = 2
+    local modeLabel = Instance.new("TextLabel", modeFrame)
+    modeLabel.Size = UDim2.new(1, -10, 0, 20)
+    modeLabel.Position = UDim2.new(0, 8, 0, 4)
+    modeLabel.BackgroundTransparency = 1
+    modeLabel.Text = "Movement Mode"
+    modeLabel.TextColor3 = Color3.new(1, 1, 1)
+    modeLabel.Font = Enum.Font.SourceSans
+    modeLabel.TextSize = 13
+    modeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    modeLabel.ZIndex = 2
     
-    local selectorFrame = Instance.new("Frame", frame)
+    local selectorFrame = Instance.new("Frame", modeFrame)
     selectorFrame.Size = UDim2.new(1, -10, 0, 28)
     selectorFrame.Position = UDim2.new(0, 5, 0, 28)
     selectorFrame.BackgroundTransparency = 1
@@ -572,8 +575,8 @@ local function createModeSelector(parent, name)
     modeText.BorderSizePixel = 0
     modeText.ZIndex = 2
     
-    local modeCorner = Instance.new("UICorner", modeText)
-    modeCorner.CornerRadius = UDim.new(0, 4)
+    local modeCorner2 = Instance.new("UICorner", modeText)
+    modeCorner2.CornerRadius = UDim.new(0, 4)
     
     local rightArrow = Instance.new("TextButton", selectorFrame)
     rightArrow.Size = UDim2.new(0, 30, 1, 0)
@@ -589,57 +592,99 @@ local function createModeSelector(parent, name)
     local rightCorner = Instance.new("UICorner", rightArrow)
     rightCorner.CornerRadius = UDim.new(0, 4)
     
-    local speedBox = Instance.new("TextBox", selectorFrame)
-    speedBox.Size = UDim2.new(0, 80, 1, 0)
-    speedBox.Position = UDim2.new(0, 172, 0, 0)
-    speedBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    speedBox.TextColor3 = Color3.new(1, 1, 1)
-    speedBox.Font = Enum.Font.SourceSans
-    speedBox.TextSize = 12
-    speedBox.Text = ""
-    speedBox.PlaceholderText = tostring(Config.WalkSpeed)
-    speedBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-    speedBox.ClearTextOnFocus = true
-    speedBox.BorderSizePixel = 0
-    speedBox.ZIndex = 2
-    speedBox.Visible = Config.MovementMode == "WalkSpeed"
+    local speedFrame = Instance.new("Frame", parent)
+    speedFrame.Size = UDim2.new(1, 0, 0, 50)
+    speedFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    speedFrame.BorderSizePixel = 0
+    speedFrame.ZIndex = 2
     
-    local speedCorner = Instance.new("UICorner", speedBox)
+    local speedCorner = Instance.new("UICorner", speedFrame)
     speedCorner.CornerRadius = UDim.new(0, 4)
     
-    local bvBox = Instance.new("TextBox", selectorFrame)
-    bvBox.Size = UDim2.new(0, 80, 1, 0)
-    bvBox.Position = UDim2.new(0, 172, 0, 0)
-    bvBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    bvBox.TextColor3 = Color3.new(1, 1, 1)
-    bvBox.Font = Enum.Font.SourceSans
-    bvBox.TextSize = 12
-    bvBox.Text = ""
-    bvBox.PlaceholderText = tostring(Config.BVSpeed)
-    bvBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-    bvBox.ClearTextOnFocus = true
-    bvBox.BorderSizePixel = 0
-    bvBox.ZIndex = 2
-    bvBox.Visible = Config.MovementMode == "BodyVelocity"
+    local speedLabel = Instance.new("TextLabel", speedFrame)
+    speedLabel.Size = UDim2.new(1, -10, 0, 20)
+    speedLabel.Position = UDim2.new(0, 8, 0, 4)
+    speedLabel.BackgroundTransparency = 1
+    speedLabel.Text = "Speed"
+    speedLabel.TextColor3 = Color3.new(1, 1, 1)
+    speedLabel.Font = Enum.Font.SourceSans
+    speedLabel.TextSize = 13
+    speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    speedLabel.ZIndex = 2
     
-    local bvCorner = Instance.new("UICorner", bvBox)
-    bvCorner.CornerRadius = UDim.new(0, 4)
+    local speedValue = Instance.new("TextLabel", speedFrame)
+    speedValue.Size = UDim2.new(0, 60, 0, 20)
+    speedValue.Position = UDim2.new(1, -68, 0, 4)
+    speedValue.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    speedValue.Text = tostring(Config.WalkSpeed) .. " s/s"
+    speedValue.TextColor3 = Color3.new(1, 1, 1)
+    speedValue.Font = Enum.Font.SourceSans
+    speedValue.TextSize = 12
+    speedValue.BorderSizePixel = 0
+    speedValue.ZIndex = 2
     
-    local suffixLabel = Instance.new("TextLabel", selectorFrame)
-    suffixLabel.Size = UDim2.new(0, 30, 1, 0)
-    suffixLabel.Position = UDim2.new(0, 256, 0, 0)
-    suffixLabel.BackgroundTransparency = 1
-    suffixLabel.Text = "s/s"
-    suffixLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-    suffixLabel.Font = Enum.Font.SourceSans
-    suffixLabel.TextSize = 11
-    suffixLabel.TextXAlignment = Enum.TextXAlignment.Left
-    suffixLabel.ZIndex = 2
+    local speedValueCorner = Instance.new("UICorner", speedValue)
+    speedValueCorner.CornerRadius = UDim.new(0, 4)
     
-    local function updateModeUI()
+    local sliderTrack = Instance.new("Frame", speedFrame)
+    sliderTrack.Size = UDim2.new(1, -20, 0, 4)
+    sliderTrack.Position = UDim2.new(0, 10, 0, 32)
+    sliderTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    sliderTrack.BorderSizePixel = 0
+    sliderTrack.ZIndex = 2
+    
+    local sliderCorner = Instance.new("UICorner", sliderTrack)
+    sliderCorner.CornerRadius = UDim.new(1, 0)
+    
+    local fill = Instance.new("Frame", sliderTrack)
+    fill.Size = UDim2.new((Config.WalkSpeed - 0) / (500 - 0), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+    fill.BorderSizePixel = 0
+    fill.ZIndex = 2
+    
+    local fillCorner = Instance.new("UICorner", fill)
+    fillCorner.CornerRadius = UDim.new(1, 0)
+    
+    local knob = Instance.new("TextButton", sliderTrack)
+    knob.Size = UDim2.new(0, 12, 0, 12)
+    knob.Position = UDim2.new((Config.WalkSpeed - 0) / (500 - 0), -6, 0.5, -6)
+    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    knob.Text = ""
+    knob.BorderSizePixel = 0
+    knob.ZIndex = 3
+    
+    local knobCorner = Instance.new("UICorner", knob)
+    knobCorner.CornerRadius = UDim.new(1, 0)
+    
+    local dragging = false
+    
+    local function updateSpeedUI(value)
+        local newValue = math.clamp(value, 0, 500)
+        if Config.MovementMode == "WalkSpeed" then
+            Config.WalkSpeed = newValue
+            speedValue.Text = string.format("%.0f", newValue) .. " s/s"
+        else
+            Config.BVSpeed = newValue
+            speedValue.Text = string.format("%.0f", newValue) .. " s/s"
+        end
+        local percent = newValue / 500
+        fill.Size = UDim2.new(percent, 0, 1, 0)
+        knob.Position = UDim2.new(percent, -6, 0.5, -6)
+    end
+    
+    local function updateModeDisplay()
         modeText.Text = Config.MovementMode
-        speedBox.Visible = Config.MovementMode == "WalkSpeed"
-        bvBox.Visible = Config.MovementMode == "BodyVelocity"
+        if Config.MovementMode == "WalkSpeed" then
+            speedValue.Text = string.format("%.0f", Config.WalkSpeed) .. " s/s"
+            local percent = Config.WalkSpeed / 500
+            fill.Size = UDim2.new(percent, 0, 1, 0)
+            knob.Position = UDim2.new(percent, -6, 0.5, -6)
+        else
+            speedValue.Text = string.format("%.0f", Config.BVSpeed) .. " s/s"
+            local percent = Config.BVSpeed / 500
+            fill.Size = UDim2.new(percent, 0, 1, 0)
+            knob.Position = UDim2.new(percent, -6, 0.5, -6)
+        end
     end
     
     leftArrow.MouseButton1Click:Connect(function()
@@ -648,7 +693,7 @@ local function createModeSelector(parent, name)
         else
             Config.MovementMode = "WalkSpeed"
         end
-        updateModeUI()
+        updateModeDisplay()
     end)
     
     rightArrow.MouseButton1Click:Connect(function()
@@ -657,46 +702,33 @@ local function createModeSelector(parent, name)
         else
             Config.MovementMode = "WalkSpeed"
         end
-        updateModeUI()
+        updateModeDisplay()
     end)
     
-    speedBox.FocusLost:Connect(function()
-        local text = speedBox.Text:gsub("%s+", "")
-        if text == "" then
-            speedBox.Text = ""
-            speedBox.PlaceholderText = tostring(Config.WalkSpeed)
-            return
-        end
-        local num = tonumber(text)
-        if num then
-            Config.WalkSpeed = num
-            speedBox.Text = ""
-            speedBox.PlaceholderText = tostring(num)
-        else
-            speedBox.Text = ""
-            speedBox.PlaceholderText = tostring(Config.WalkSpeed)
+    knob.MouseButton1Down:Connect(function()
+        dragging = true
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
         end
     end)
     
-    bvBox.FocusLost:Connect(function()
-        local text = bvBox.Text:gsub("%s+", "")
-        if text == "" then
-            bvBox.Text = ""
-            bvBox.PlaceholderText = tostring(Config.BVSpeed)
-            return
-        end
-        local num = tonumber(text)
-        if num then
-            Config.BVSpeed = num
-            bvBox.Text = ""
-            bvBox.PlaceholderText = tostring(num)
-        else
-            bvBox.Text = ""
-            bvBox.PlaceholderText = tostring(Config.BVSpeed)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local mousePos = input.Position.X
+            local sliderPos = sliderTrack.AbsolutePosition.X
+            local sliderWidth = sliderTrack.AbsoluteSize.X
+            local percent = math.clamp((mousePos - sliderPos) / sliderWidth, 0, 1)
+            local newValue = percent * 500
+            updateSpeedUI(newValue)
         end
     end)
     
-    return frame
+    updateModeDisplay()
+    
+    return modeFrame, speedFrame
 end
 
 local function createCoordinateInput(parent, name, prop)
@@ -782,10 +814,6 @@ local function createCoordinateInput(parent, name, prop)
     
     return frame
 end
-
-local updateInvis, ragdollConnection, flingThread, espConnection, teleportConnection = nil
-local spinConnection = nil
-local currentBodyVelocity = nil
 
 local function toggleRagdoll(state)
     local char = LocalPlayer.Character
@@ -1013,7 +1041,9 @@ local visualWindow, visualContent = createWindow("Visual", 260, 130, 690, 55)
 local teleportWindow, teleportContent = createWindow("Teleport", 300, 200, 30, 580)
 
 local physicsSection = createSection(characterContent, "Physics")
-createModeSelector(physicsSection, "Movement Mode")
+local modeFrame, speedFrame = createSpeedControl(physicsSection)
+modeFrame.Parent = physicsSection
+speedFrame.Parent = physicsSection
 createSlider(physicsSection, "Jump Power", "JumpPower", 0, 250, "", 0)
 createSlider(physicsSection, "Gravity", "Gravity", 0, 500, "", 1)
 createToggle(physicsSection, "Disable Ragdoll", "DisableRagdoll", toggleRagdoll)
