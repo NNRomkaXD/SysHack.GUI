@@ -418,7 +418,8 @@ local function createDropdown(parent, name, prop, options)
     return frame
 end
 
-local function createSlider(parent, name, prop, min, max, suffix)
+local function createSlider(parent, name, prop, min, max, suffix, decimal)
+    decimal = decimal or 0
     local frame = Instance.new("Frame", parent)
     frame.Size = UDim2.new(1, 0, 0, 50)
     frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
@@ -440,10 +441,11 @@ local function createSlider(parent, name, prop, min, max, suffix)
     label.ZIndex = 2
     
     local valueLabel = Instance.new("TextLabel", frame)
-    valueLabel.Size = UDim2.new(0, 50, 0, 20)
-    valueLabel.Position = UDim2.new(1, -58, 0, 4)
+    valueLabel.Size = UDim2.new(0, 60, 0, 20)
+    valueLabel.Position = UDim2.new(1, -68, 0, 4)
     valueLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    valueLabel.Text = tostring(Config[prop]) .. (suffix or "")
+    local format = decimal > 0 and ("%." .. decimal .. "f") or "%.0f"
+    valueLabel.Text = string.format(format, Config[prop]) .. suffix
     valueLabel.TextColor3 = Color3.new(1, 1, 1)
     valueLabel.Font = Enum.Font.SourceSans
     valueLabel.TextSize = 12
@@ -488,7 +490,7 @@ local function createSlider(parent, name, prop, min, max, suffix)
     local function updateValue(value)
         local newValue = math.clamp(value, min, max)
         Config[prop] = newValue
-        valueLabel.Text = string.format("%.2f", newValue) .. (suffix or "")
+        valueLabel.Text = string.format(format, newValue) .. suffix
         local percent = (newValue - min) / (max - min)
         fill.Size = UDim2.new(percent, 0, 1, 0)
         button.Position = UDim2.new(percent, -6, 0.5, -6)
@@ -783,9 +785,11 @@ end
 
 local updateInvis, ragdollConnection, flingThread, espConnection, teleportConnection = nil
 local spinConnection = nil
+local currentBodyVelocity = nil
 
 local function toggleRagdoll(state)
-    local char, hum = LocalPlayer.Character, LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChild("Humanoid")
     if not (char and hum) then return end
     
     if state then
@@ -801,7 +805,10 @@ local function toggleRagdoll(state)
     else
         hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
         hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
-        if ragdollConnection then ragdollConnection:Disconnect() ragdollConnection = nil end
+        if ragdollConnection then
+            ragdollConnection:Disconnect()
+            ragdollConnection = nil
+        end
     end
 end
 
@@ -813,40 +820,53 @@ local function toggleTouchFling(state)
             detection.Parent = ReplicatedStorage
         end
         
-        local function fling()
+        local function flingLoop()
             while Config.TouchFling do
-                RunService.Heartbeat:Wait()
                 local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                 if hrp then
-                    local vel, movel = hrp.Velocity, 0.1
+                    local vel = hrp.Velocity
                     hrp.Velocity = vel * Config.FlingPower + Vector3.new(0, Config.FlingPower, 0)
                     RunService.RenderStepped:Wait()
                     hrp.Velocity = vel
                     RunService.Stepped:Wait()
-                    hrp.Velocity = vel + Vector3.new(0, movel, 0)
+                    hrp.Velocity = vel + Vector3.new(0, 0.1, 0)
                 end
+                RunService.Heartbeat:Wait()
             end
         end
-        flingThread = coroutine.create(fling)
+        
+        if flingThread then coroutine.close(flingThread) end
+        flingThread = coroutine.create(flingLoop)
         coroutine.resume(flingThread)
+    else
+        if flingThread then
+            coroutine.close(flingThread)
+            flingThread = nil
+        end
     end
 end
 
 local function toggleInvis(state)
-    local char, hrp = LocalPlayer.Character, LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not (char and hrp) then return end
 
     if state then
         for _, v in pairs(char:GetDescendants()) do 
-            if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then v.Transparency = Config.Invis_Transparency end 
+            if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then 
+                v.Transparency = Config.Invis_Transparency
+            end 
         end
+        
         local savedPos = hrp.CFrame
         char:MoveTo(Config.SeatTeleportPos)
         task.wait(0.1)
+        
         local seat = Instance.new('Seat', workspace)
         seat.Name = "InvisChair"
         seat.Transparency = 1
         seat.Position = Config.SeatTeleportPos
+        
         local weld = Instance.new("Weld", seat)
         weld.Part0 = seat
         weld.Part1 = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
@@ -854,10 +874,15 @@ local function toggleInvis(state)
         seat.CFrame = savedPos
     else
         for _, v in pairs(char:GetDescendants()) do 
-            if v:IsA("BasePart") then v.Transparency = 0 end 
+            if v:IsA("BasePart") then 
+                v.Transparency = 0
+            end 
         end
-        if workspace:FindFirstChild("InvisChair") then workspace.InvisChair:Destroy() end
+        
+        local chair = workspace:FindFirstChild("InvisChair")
+        if chair then chair:Destroy() end
     end
+    
     if updateInvis then updateInvis() end
 end
 
@@ -879,11 +904,14 @@ local function toggleESP(state)
             end
         end)
     else
-        if espConnection then espConnection:Disconnect() espConnection = nil end
+        if espConnection then 
+            espConnection:Disconnect()
+            espConnection = nil
+        end
+        
         for _, player in ipairs(Players:GetPlayers()) do
-            if player.Character and player.Character:FindFirstChild("GetReal") then
-                player.Character.GetReal:Destroy()
-            end
+            local highlight = player.Character and player.Character:FindFirstChild("GetReal")
+            if highlight then highlight:Destroy() end
         end
     end
 end
@@ -893,36 +921,46 @@ local function toggleSpin(state)
         if spinConnection then spinConnection:Disconnect() end
         spinConnection = RunService.RenderStepped:Connect(function()
             local char = LocalPlayer.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(Config.Spin_Speed), 0)
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(Config.Spin_Speed), 0)
             end
         end)
     else
         if spinConnection then 
-            spinConnection:Disconnect() 
-            spinConnection = nil 
+            spinConnection:Disconnect()
+            spinConnection = nil
         end
     end
 end
 
 local function resetHitboxes()
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
-            local head = p.Character.Head
-            head.Size = Vector3.new(1.2, 1.2, 1.2)
-            head.Transparency = 0
-            head.CanCollide = true
-            if head:FindFirstChild("Face") then head.Face.Transparency = 0 end
-            for _, child in pairs(head:GetChildren()) do
-                if child:IsA("Decal") or child:IsA("Texture") then child.Transparency = 0 end
+        if p ~= LocalPlayer and p.Character then
+            local head = p.Character:FindFirstChild("Head")
+            if head then
+                head.Size = Vector3.new(1.2, 1.2, 1.2)
+                head.Transparency = 0
+                head.CanCollide = true
+                
+                local face = head:FindFirstChild("Face")
+                if face then face.Transparency = 0 end
+                
+                for _, child in pairs(head:GetChildren()) do
+                    if child:IsA("Decal") or child:IsA("Texture") then
+                        child.Transparency = 0
+                    end
+                end
             end
         end
     end
 end
 
 local function teleportPlayers()
-    local char, root = LocalPlayer.Character, LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
     if not (char and root) then return end
+    
     local offsetPosition = root.Position + (root.CFrame.LookVector * Config.TeleportDistance)
     
     for _, player in ipairs(Players:GetPlayers()) do
@@ -937,11 +975,12 @@ local function teleportPlayers()
 end
 
 UserInputService.InputBegan:Connect(function(Input, Processed)
-    if not Processed and Input.UserInputType == Enum.UserInputType.MouseButton2 then
-        AimbotHolding = true
-    end
-    if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-        CloseAllDropdowns()
+    if not Processed then
+        if Input.UserInputType == Enum.UserInputType.MouseButton2 then
+            AimbotHolding = true
+        elseif Input.UserInputType == Enum.UserInputType.MouseButton1 then
+            CloseAllDropdowns()
+        end
     end
 end)
 
@@ -952,63 +991,54 @@ UserInputService.InputEnded:Connect(function(Input)
 end)
 
 RunService.RenderStepped:Connect(function()
-    if not Config.AimbotEnabled or not AimbotHolding then return end
-    
-    local Target = GetBestTarget()
-    if not Target then return end
-    
-    local Character = Target.Character
-    if not Character then return end
-    
-    local TargetPart = Character:FindFirstChild(Config.AimbotTargetPart)
-    if not TargetPart then return end
-    
-    local TargetPosition = TargetPart.Position
-    local LookAt = CFrame.new(Camera.CFrame.Position, TargetPosition)
-    Camera.CFrame = Camera.CFrame:Lerp(LookAt, Config.AimbotSmoothness)
-end)
-
-local characterWindow, characterContent, _, characterGui = createWindow("Character", 320, 500, 30, 55)
-local combatWindow, combatContent, _, combatGui = createWindow("Combat", 300, 380, 370, 55)
-local visualWindow, visualContent, _, visualGui = createWindow("Visual", 260, 130, 690, 55)
-local teleportWindow, teleportContent, _, teleportGui = createWindow("Teleport", 300, 200, 30, 580)
-
-local physicsSection = createSection(characterContent, "Physics")
-createModeSelector(physicsSection, "Movement Mode")
-createSlider(physicsSection, "Jump Power", "JumpPower", 0, 250, "")
-createSlider(physicsSection, "Gravity", "Gravity", 0, 500, "")
-createToggle(physicsSection, "Disable Ragdoll", "DisableRagdoll", toggleRagdoll)
-
-local abilitiesSection = createSection(characterContent, "Abilities")
-createToggle(abilitiesSection, "No Clip", "Noclip", function(state)
-    if state then
-        local char = LocalPlayer.Character
-        if char then
-            for _, v in pairs(char:GetDescendants()) do
-                if v:IsA("BasePart") then v.CanCollide = false end
+    if Config.AimbotEnabled and AimbotHolding then
+        local Target = GetBestTarget()
+        if Target then
+            local Character = Target.Character
+            if Character then
+                local TargetPart = Character:FindFirstChild(Config.AimbotTargetPart)
+                if TargetPart then
+                    local TargetPosition = TargetPart.Position
+                    local LookAt = CFrame.new(Camera.CFrame.Position, TargetPosition)
+                    Camera.CFrame = Camera.CFrame:Lerp(LookAt, Config.AimbotSmoothness)
+                end
             end
         end
     end
 end)
+
+local characterWindow, characterContent = createWindow("Character", 320, 500, 30, 55)
+local combatWindow, combatContent = createWindow("Combat", 300, 380, 370, 55)
+local visualWindow, visualContent = createWindow("Visual", 260, 130, 690, 55)
+local teleportWindow, teleportContent = createWindow("Teleport", 300, 200, 30, 580)
+
+local physicsSection = createSection(characterContent, "Physics")
+createModeSelector(physicsSection, "Movement Mode")
+createSlider(physicsSection, "Jump Power", "JumpPower", 0, 250, "", 0)
+createSlider(physicsSection, "Gravity", "Gravity", 0, 500, "", 1)
+createToggle(physicsSection, "Disable Ragdoll", "DisableRagdoll", toggleRagdoll)
+
+local abilitiesSection = createSection(characterContent, "Abilities")
+createToggle(abilitiesSection, "No Clip", "Noclip")
 createToggle(abilitiesSection, "Infinite Jump", "InfJump")
 local invisToggle, invisUpdate = createToggle(abilitiesSection, "Invisible", "Invis_Enabled", toggleInvis)
 updateInvis = invisUpdate
 createToggle(abilitiesSection, "Touch Fling", "TouchFling", toggleTouchFling)
-createSlider(abilitiesSection, "Fling Power", "FlingPower", 0, 9e9, "")
+createSlider(abilitiesSection, "Fling Power", "FlingPower", 0, 9e9, "", 0)
 
 local spinSection = createSection(characterContent, "Spin")
 createToggle(spinSection, "Spin", "Spin_Enabled", toggleSpin)
-createSlider(spinSection, "Spin Speed", "Spin_Speed", 0, 360, "deg/s")
+createSlider(spinSection, "Spin Speed", "Spin_Speed", 0, 360, "deg/s", 0)
 
 local aimbotSection = createSection(combatContent, "Aimbot")
 createToggle(aimbotSection, "Enable Aimbot", "AimbotEnabled")
-createSlider(aimbotSection, "Smoothness", "AimbotSmoothness", 0, 1, "")
+createSlider(aimbotSection, "Smoothness", "AimbotSmoothness", 0, 1, "", 2)
 createDropdown(aimbotSection, "Target Part", "AimbotTargetPart", {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"})
-createSlider(aimbotSection, "Field Of View", "AimbotFieldOfView", 50, 500, "")
+createSlider(aimbotSection, "Field Of View", "AimbotFieldOfView", 50, 500, "", 0)
 
 local hitboxSection = createSection(combatContent, "Hitbox")
 createToggle(hitboxSection, "Hitbox", "Hitbox")
-createSlider(hitboxSection, "Hitbox Size", "HitboxSize", 1, 500, "s")
+createSlider(hitboxSection, "Hitbox Size", "HitboxSize", 1, 500, "s", 0)
 createToggle(hitboxSection, "Visible Hitbox", "HitboxVisible")
 
 local visualSection = createSection(visualContent, "ESP")
@@ -1021,23 +1051,33 @@ createToggle(teleportSection, "Teleport Players", "TeleportEnabled", function(st
         teleportConnection = RunService.Heartbeat:Connect(teleportPlayers)
     else
         if teleportConnection then 
-            teleportConnection:Disconnect() 
-            teleportConnection = nil 
+            teleportConnection:Disconnect()
+            teleportConnection = nil
         end
     end
 end)
-createSlider(teleportSection, "Teleport Distance", "TeleportDistance", 1, 100, "s")
+createSlider(teleportSection, "Teleport Distance", "TeleportDistance", 1, 100, "s", 0)
 
 local selfTeleportSection = createSection(teleportContent, "Self Teleport")
 createCoordinateInput(selfTeleportSection, "Teleport To", "TeleportTo")
 
 RunService.Heartbeat:Connect(function()
-    local char, hrp, hum = LocalPlayer.Character, LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart"), LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChild("Humanoid")
+    
     if not (char and hrp and hum) then return end
 
-    local mBV = hrp:FindFirstChild("MoveBV") or Instance.new("BodyVelocity", hrp)
-    mBV.Name = "MoveBV"
-    mBV.MaxForce = Vector3.zero
+    if not currentBodyVelocity then
+        currentBodyVelocity = hrp:FindFirstChild("MoveBV")
+        if not currentBodyVelocity then
+            currentBodyVelocity = Instance.new("BodyVelocity")
+            currentBodyVelocity.Name = "MoveBV"
+            currentBodyVelocity.Parent = hrp
+        end
+    end
+    
+    currentBodyVelocity.MaxForce = Vector3.zero
 
     hum.JumpPower = Config.JumpPower
     workspace.Gravity = Config.Gravity
@@ -1046,23 +1086,21 @@ RunService.Heartbeat:Connect(function()
         hum.WalkSpeed = 16
         local dir = hum.MoveDirection
         if dir.Magnitude > 0 then
-            mBV.MaxForce = Vector3.new(1e6, 0, 1e6)
-            mBV.Velocity = dir * Config.BVSpeed
+            currentBodyVelocity.MaxForce = Vector3.new(1e6, 0, 1e6)
+            currentBodyVelocity.Velocity = dir * Config.BVSpeed
         else
-            mBV.MaxForce = Vector3.zero
+            currentBodyVelocity.MaxForce = Vector3.zero
         end
     else
-        mBV.MaxForce = Vector3.zero
+        currentBodyVelocity.MaxForce = Vector3.zero
         hum.WalkSpeed = Config.WalkSpeed
     end
 
     if Config.Noclip then
         for _, v in pairs(char:GetDescendants()) do
-            if v:IsA("BasePart") then v.CanCollide = false end
-        end
-    else
-        for _, v in pairs(char:GetDescendants()) do
-            if v:IsA("BasePart") and not v.CanCollide then v.CanCollide = true end
+            if v:IsA("BasePart") then
+                v.CanCollide = false
+            end
         end
     end
 end)
@@ -1070,17 +1108,22 @@ end)
 RunService.RenderStepped:Connect(function()
     if Config.Hitbox then
         for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
-                local head = p.Character.Head
-                head.Size = Vector3.one * Config.HitboxSize
-                head.Transparency = Config.HitboxVisible and 0.5 or 1
-                head.CanCollide = false
-                if head:FindFirstChild("Face") then
-                    head.Face.Transparency = Config.HitboxVisible and 0.5 or 1
-                end
-                for _, child in pairs(head:GetChildren()) do
-                    if child:IsA("Decal") or child:IsA("Texture") then
-                        child.Transparency = Config.HitboxVisible and 0.5 or 1
+            if p ~= LocalPlayer and p.Character then
+                local head = p.Character:FindFirstChild("Head")
+                if head then
+                    head.Size = Vector3.one * Config.HitboxSize
+                    head.Transparency = Config.HitboxVisible and 0.5 or 1
+                    head.CanCollide = false
+                    
+                    local face = head:FindFirstChild("Face")
+                    if face then
+                        face.Transparency = Config.HitboxVisible and 0.5 or 1
+                    end
+                    
+                    for _, child in pairs(head:GetChildren()) do
+                        if child:IsA("Decal") or child:IsA("Texture") then
+                            child.Transparency = Config.HitboxVisible and 0.5 or 1
+                        end
                     end
                 end
             end
@@ -1092,49 +1135,56 @@ end)
 
 UserInputService.JumpRequest:Connect(function()
     if Config.InfJump then
-        local char, hum = LocalPlayer.Character, LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
-        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChild("Humanoid")
+        if hum and hum:GetState() ~= Enum.HumanoidStateType.Jumping then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
     end
 end)
 
 UserInputService.InputBegan:Connect(function(i, g)
     if g then return end
+    
     if i.KeyCode == Enum.KeyCode.Z then
         Config.Invis_Enabled = not Config.Invis_Enabled
         toggleInvis(Config.Invis_Enabled)
     elseif i.KeyCode == Enum.KeyCode.Insert then
         GuiVisible = not GuiVisible
-        if GuiVisible then
-            characterWindow.Visible = true
-            combatWindow.Visible = true
-            visualWindow.Visible = true
-            teleportWindow.Visible = true
-        else
-            characterWindow.Visible = false
-            combatWindow.Visible = false
-            visualWindow.Visible = false
-            teleportWindow.Visible = false
-        end
+        characterWindow.Visible = GuiVisible
+        combatWindow.Visible = GuiVisible
+        visualWindow.Visible = GuiVisible
+        teleportWindow.Visible = GuiVisible
     end
 end)
 
 Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function(character)
         task.wait(0.5)
-        if not Config.Hitbox and character:FindFirstChild("Head") then
-            local head = character.Head
-            head.Size = Vector3.new(1.2, 1.2, 1.2)
-            head.Transparency = 0
-            head.CanCollide = true
-            if head:FindFirstChild("Face") then head.Face.Transparency = 0 end
-            for _, child in pairs(head:GetChildren()) do
-                if child:IsA("Decal") or child:IsA("Texture") then child.Transparency = 0 end
+        
+        if not Config.Hitbox then
+            local head = character:FindFirstChild("Head")
+            if head then
+                head.Size = Vector3.new(1.2, 1.2, 1.2)
+                head.Transparency = 0
+                head.CanCollide = true
+                
+                local face = head:FindFirstChild("Face")
+                if face then face.Transparency = 0 end
+                
+                for _, child in pairs(head:GetChildren()) do
+                    if child:IsA("Decal") or child:IsA("Texture") then
+                        child.Transparency = 0
+                    end
+                end
             end
         end
+        
         if Config.DisableRagdoll then
             task.wait(0.1)
             toggleRagdoll(true)
         end
+        
         if Config.Spin_Enabled then
             if spinConnection then spinConnection:Disconnect() end
             toggleSpin(true)
@@ -1144,9 +1194,15 @@ end)
 
 LocalPlayer.CharacterAdded:Connect(function(character)
     task.wait(0.5)
+    currentBodyVelocity = nil
+    
     if Config.Spin_Enabled then
         if spinConnection then spinConnection:Disconnect() end
         toggleSpin(true)
+    end
+    
+    if Config.Invis_Enabled then
+        toggleInvis(true)
     end
 end)
 
