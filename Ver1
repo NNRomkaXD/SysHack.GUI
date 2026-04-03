@@ -43,64 +43,46 @@ local spinConnection = nil
 local currentBodyVelocity = nil
 
 local function GetClosestPlayerToCursor()
-    local Target = nil
-    local ShortestDistance = Config.AimbotFieldOfView
+    local Target, ShortestDistance = nil, Config.AimbotFieldOfView
     local MousePos = UserInputService:GetMouseLocation()
-    
     for _, Player in pairs(Players:GetPlayers()) do
         if Player == LocalPlayer then continue end
-        
         local Character = Player.Character
         if not Character then continue end
-        
         local TargetPart = Character:FindFirstChild(Config.AimbotTargetPart)
         if not TargetPart then continue end
-        
         local Humanoid = Character:FindFirstChildOfClass("Humanoid")
         if not Humanoid or Humanoid.Health <= 0 then continue end
-        
         local ScreenPos, OnScreen = Camera:WorldToViewportPoint(TargetPart.Position)
         if not OnScreen then continue end
-        
         local Distance = (Vector2.new(MousePos.X, MousePos.Y) - Vector2.new(ScreenPos.X, ScreenPos.Y)).Magnitude
-        
         if Distance < ShortestDistance then
             Target = Player
             ShortestDistance = Distance
         end
     end
-    
     return Target
 end
 
 local function GetClosestPlayerToCharacter()
-    local Target = nil
-    local ShortestDistance = math.huge
+    local Target, ShortestDistance = nil, math.huge
     local Character = LocalPlayer.Character
     local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-    
     if not Root then return nil end
-    
     for _, Player in pairs(Players:GetPlayers()) do
         if Player == LocalPlayer then continue end
-        
         local TargetCharacter = Player.Character
         if not TargetCharacter then continue end
-        
         local TargetRoot = TargetCharacter:FindFirstChild("HumanoidRootPart")
         if not TargetRoot then continue end
-        
         local Humanoid = TargetCharacter:FindFirstChildOfClass("Humanoid")
         if not Humanoid or Humanoid.Health <= 0 then continue end
-        
         local Distance = (Root.Position - TargetRoot.Position).Magnitude
-        
         if Distance < ShortestDistance then
             Target = Player
             ShortestDistance = Distance
         end
     end
-    
     return Target
 end
 
@@ -242,13 +224,13 @@ local function createSection(parent, title)
     sectionCorner.CornerRadius = UDim.new(0, 4)
     
     local header = Instance.new("TextLabel", section)
-    header.Size = UDim2.new(1, 0, 0, 22)
+    header.Size = UDim2.new(1, 0, 0, 20)
     header.Position = UDim2.new(0, 0, 0, 0)
     header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     header.Text = title
     header.TextColor3 = Color3.new(1, 1, 1)
     header.Font = Enum.Font.SourceSansBold
-    header.TextSize = 13
+    header.TextSize = 12
     header.TextXAlignment = Enum.TextXAlignment.Center
     header.BorderSizePixel = 0
     header.ZIndex = 2
@@ -257,14 +239,14 @@ local function createSection(parent, title)
     headerCorner.CornerRadius = UDim.new(0, 4)
     
     local content = Instance.new("Frame", section)
-    content.Size = UDim2.new(1, -10, 0, 0)
-    content.Position = UDim2.new(0, 5, 0, 26)
+    content.Size = UDim2.new(1, -8, 0, 0)
+    content.Position = UDim2.new(0, 4, 0, 22)
     content.BackgroundTransparency = 1
     content.AutomaticSize = Enum.AutomaticSize.Y
     content.ClipsDescendants = false
     
     local list = Instance.new("UIListLayout", content)
-    list.Padding = UDim.new(0, 4)
+    list.Padding = UDim.new(0, 3)
     list.SortOrder = Enum.SortOrder.LayoutOrder
     
     return content
@@ -272,7 +254,7 @@ end
 
 local function createToggle(parent, name, prop, callback)
     local btn = Instance.new("TextButton", parent)
-    btn.Size = UDim2.new(1, 0, 0, 26)
+    btn.Size = UDim2.new(1, 0, 0, 24)
     btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     btn.Text = ""
     btn.AutoButtonColor = false
@@ -289,13 +271,13 @@ local function createToggle(parent, name, prop, callback)
     label.Text = name
     label.TextColor3 = Color3.new(1, 1, 1)
     label.Font = Enum.Font.SourceSans
-    label.TextSize = 13
+    label.TextSize = 12
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.ZIndex = 2
     
     local track = Instance.new("Frame", btn)
-    track.Size = UDim2.new(0, 36, 0, 18)
-    track.Position = UDim2.new(1, -44, 0.5, -9)
+    track.Size = UDim2.new(0, 32, 0, 16)
+    track.Position = UDim2.new(1, -40, 0.5, -8)
     track.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     track.BorderSizePixel = 0
     track.ZIndex = 2
@@ -304,8 +286,8 @@ local function createToggle(parent, name, prop, callback)
     trackCorner.CornerRadius = UDim.new(1, 0)
     
     local thumb = Instance.new("Frame", track)
-    thumb.Size = UDim2.new(0, 14, 0, 14)
-    thumb.Position = Config[prop] and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+    thumb.Size = UDim2.new(0, 12, 0, 12)
+    thumb.Position = Config[prop] and UDim2.new(1, -14, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)
     thumb.BackgroundColor3 = Config[prop] and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(180, 180, 180)
     thumb.BorderSizePixel = 0
     thumb.ZIndex = 3
@@ -314,7 +296,7 @@ local function createToggle(parent, name, prop, callback)
     thumbCorner.CornerRadius = UDim.new(1, 0)
     
     local function updateUI()
-        local targetPos = Config[prop] and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+        local targetPos = Config[prop] and UDim2.new(1, -14, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)
         local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
         local posTween = TweenService:Create(thumb, tweenInfo, {Position = targetPos})
         local colorTween = TweenService:Create(thumb, tweenInfo, {BackgroundColor3 = Config[prop] and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(180, 180, 180)})
@@ -333,7 +315,7 @@ end
 
 local function createDropdown(parent, name, prop, options)
     local frame = Instance.new("Frame", parent)
-    frame.Size = UDim2.new(1, 0, 0, 26)
+    frame.Size = UDim2.new(1, 0, 0, 24)
     frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     frame.BorderSizePixel = 0
     frame.ClipsDescendants = false
@@ -343,23 +325,23 @@ local function createDropdown(parent, name, prop, options)
     frameCorner.CornerRadius = UDim.new(0, 4)
     
     local label = Instance.new("TextLabel", frame)
-    label.Size = UDim2.new(0.5, -5, 1, 0)
+    label.Size = UDim2.new(0.45, -5, 1, 0)
     label.Position = UDim2.new(0, 8, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = name
     label.TextColor3 = Color3.new(1, 1, 1)
     label.Font = Enum.Font.SourceSans
-    label.TextSize = 13
+    label.TextSize = 12
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.ZIndex = 10
     
     local dropdownBtn = Instance.new("TextButton", frame)
-    dropdownBtn.Size = UDim2.new(0.5, -15, 1, -6)
-    dropdownBtn.Position = UDim2.new(0.5, 5, 0, 3)
+    dropdownBtn.Size = UDim2.new(0.55, -15, 1, -4)
+    dropdownBtn.Position = UDim2.new(0.45, 5, 0, 2)
     dropdownBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     dropdownBtn.TextColor3 = Color3.new(1, 1, 1)
     dropdownBtn.Font = Enum.Font.SourceSans
-    dropdownBtn.TextSize = 13
+    dropdownBtn.TextSize = 12
     dropdownBtn.Text = Config[prop]
     dropdownBtn.BorderSizePixel = 0
     dropdownBtn.ZIndex = 10
@@ -368,8 +350,8 @@ local function createDropdown(parent, name, prop, options)
     dropdownCorner.CornerRadius = UDim.new(0, 4)
     
     local menu = Instance.new("Frame", frame)
-    menu.Size = UDim2.new(0.5, -15, 0, #options * 22)
-    menu.Position = UDim2.new(0.5, 5, 1, 3)
+    menu.Size = UDim2.new(0.55, -15, 0, #options * 20)
+    menu.Position = UDim2.new(0.45, 5, 1, 2)
     menu.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     menu.Visible = false
     menu.ZIndex = 100
@@ -381,23 +363,23 @@ local function createDropdown(parent, name, prop, options)
     menuCorner.CornerRadius = UDim.new(0, 4)
     
     local menuList = Instance.new("UIListLayout", menu)
-    menuList.Padding = UDim.new(0, 2)
+    menuList.Padding = UDim.new(0, 1)
     menuList.SortOrder = Enum.SortOrder.LayoutOrder
     
     for _, option in ipairs(options) do
         local btn = Instance.new("TextButton", menu)
-        btn.Size = UDim2.new(1, -10, 0, 22)
-        btn.Position = UDim2.new(0, 5, 0, 0)
+        btn.Size = UDim2.new(1, -8, 0, 20)
+        btn.Position = UDim2.new(0, 4, 0, 0)
         btn.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
         btn.Text = option
         btn.TextColor3 = Color3.new(1, 1, 1)
         btn.Font = Enum.Font.SourceSans
-        btn.TextSize = 12
+        btn.TextSize = 11
         btn.ZIndex = 101
         btn.BorderSizePixel = 0
         
         local btnCorner = Instance.new("UICorner", btn)
-        btnCorner.CornerRadius = UDim.new(0, 4)
+        btnCorner.CornerRadius = UDim.new(0, 3)
         
         btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(75, 75, 75) end)
         btn.MouseLeave:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(55, 55, 55) end)
@@ -424,7 +406,7 @@ end
 local function createSlider(parent, name, prop, min, max, suffix, decimal)
     decimal = decimal or 0
     local frame = Instance.new("Frame", parent)
-    frame.Size = UDim2.new(1, 0, 0, 50)
+    frame.Size = UDim2.new(1, 0, 0, 44)
     frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     frame.BorderSizePixel = 0
     frame.ZIndex = 2
@@ -433,25 +415,25 @@ local function createSlider(parent, name, prop, min, max, suffix, decimal)
     frameCorner.CornerRadius = UDim.new(0, 4)
     
     local label = Instance.new("TextLabel", frame)
-    label.Size = UDim2.new(1, -10, 0, 20)
-    label.Position = UDim2.new(0, 8, 0, 4)
+    label.Size = UDim2.new(0.6, -5, 0, 18)
+    label.Position = UDim2.new(0, 8, 0, 3)
     label.BackgroundTransparency = 1
     label.Text = name
     label.TextColor3 = Color3.new(1, 1, 1)
     label.Font = Enum.Font.SourceSans
-    label.TextSize = 13
+    label.TextSize = 12
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.ZIndex = 2
     
     local valueLabel = Instance.new("TextLabel", frame)
-    valueLabel.Size = UDim2.new(0, 60, 0, 20)
-    valueLabel.Position = UDim2.new(1, -68, 0, 4)
+    valueLabel.Size = UDim2.new(0, 55, 0, 18)
+    valueLabel.Position = UDim2.new(1, -60, 0, 3)
     valueLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     local format = decimal > 0 and ("%." .. decimal .. "f") or "%.0f"
     valueLabel.Text = string.format(format, Config[prop]) .. suffix
     valueLabel.TextColor3 = Color3.new(1, 1, 1)
     valueLabel.Font = Enum.Font.SourceSans
-    valueLabel.TextSize = 12
+    valueLabel.TextSize = 11
     valueLabel.BorderSizePixel = 0
     valueLabel.ZIndex = 2
     
@@ -459,8 +441,8 @@ local function createSlider(parent, name, prop, min, max, suffix, decimal)
     valueCorner.CornerRadius = UDim.new(0, 4)
     
     local slider = Instance.new("Frame", frame)
-    slider.Size = UDim2.new(1, -20, 0, 4)
-    slider.Position = UDim2.new(0, 10, 0, 32)
+    slider.Size = UDim2.new(1, -16, 0, 4)
+    slider.Position = UDim2.new(0, 8, 0, 28)
     slider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     slider.BorderSizePixel = 0
     slider.ZIndex = 2
@@ -478,8 +460,8 @@ local function createSlider(parent, name, prop, min, max, suffix, decimal)
     fillCorner.CornerRadius = UDim.new(1, 0)
     
     local button = Instance.new("TextButton", slider)
-    button.Size = UDim2.new(0, 12, 0, 12)
-    button.Position = UDim2.new((Config[prop] - min) / (max - min), -6, 0.5, -6)
+    button.Size = UDim2.new(0, 10, 0, 10)
+    button.Position = UDim2.new((Config[prop] - min) / (max - min), -5, 0.5, -5)
     button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     button.Text = ""
     button.BorderSizePixel = 0
@@ -496,27 +478,20 @@ local function createSlider(parent, name, prop, min, max, suffix, decimal)
         valueLabel.Text = string.format(format, newValue) .. suffix
         local percent = (newValue - min) / (max - min)
         fill.Size = UDim2.new(percent, 0, 1, 0)
-        button.Position = UDim2.new(percent, -6, 0.5, -6)
+        button.Position = UDim2.new(percent, -5, 0.5, -5)
     end
     
-    button.MouseButton1Down:Connect(function()
-        dragging = true
-    end)
-    
+    button.MouseButton1Down:Connect(function() dragging = true end)
     UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
     end)
-    
     UserInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local mousePos = input.Position.X
             local sliderPos = slider.AbsolutePosition.X
             local sliderWidth = slider.AbsoluteSize.X
             local percent = math.clamp((mousePos - sliderPos) / sliderWidth, 0, 1)
-            local newValue = min + (max - min) * percent
-            updateValue(newValue)
+            updateValue(min + (max - min) * percent)
         end
     end)
     
@@ -525,7 +500,7 @@ end
 
 local function createSpeedControl(parent)
     local modeFrame = Instance.new("Frame", parent)
-    modeFrame.Size = UDim2.new(1, 0, 0, 60)
+    modeFrame.Size = UDim2.new(1, 0, 0, 54)
     modeFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     modeFrame.BorderSizePixel = 0
     modeFrame.ZIndex = 2
@@ -534,30 +509,30 @@ local function createSpeedControl(parent)
     modeCorner.CornerRadius = UDim.new(0, 4)
     
     local modeLabel = Instance.new("TextLabel", modeFrame)
-    modeLabel.Size = UDim2.new(1, -10, 0, 20)
-    modeLabel.Position = UDim2.new(0, 8, 0, 4)
+    modeLabel.Size = UDim2.new(1, -10, 0, 18)
+    modeLabel.Position = UDim2.new(0, 8, 0, 3)
     modeLabel.BackgroundTransparency = 1
-    modeLabel.Text = "Movement Mode"
+    modeLabel.Text = "Mode"
     modeLabel.TextColor3 = Color3.new(1, 1, 1)
     modeLabel.Font = Enum.Font.SourceSans
-    modeLabel.TextSize = 13
+    modeLabel.TextSize = 12
     modeLabel.TextXAlignment = Enum.TextXAlignment.Left
     modeLabel.ZIndex = 2
     
     local selectorFrame = Instance.new("Frame", modeFrame)
-    selectorFrame.Size = UDim2.new(1, -10, 0, 28)
-    selectorFrame.Position = UDim2.new(0, 5, 0, 28)
+    selectorFrame.Size = UDim2.new(0, 140, 0, 26)
+    selectorFrame.Position = UDim2.new(1, -148, 0, 22)
     selectorFrame.BackgroundTransparency = 1
     selectorFrame.ZIndex = 2
     
     local leftArrow = Instance.new("TextButton", selectorFrame)
-    leftArrow.Size = UDim2.new(0, 30, 1, 0)
+    leftArrow.Size = UDim2.new(0, 28, 1, 0)
     leftArrow.Position = UDim2.new(0, 0, 0, 0)
     leftArrow.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     leftArrow.Text = "<"
     leftArrow.TextColor3 = Color3.new(1, 1, 1)
     leftArrow.Font = Enum.Font.SourceSansBold
-    leftArrow.TextSize = 16
+    leftArrow.TextSize = 14
     leftArrow.BorderSizePixel = 0
     leftArrow.ZIndex = 2
     
@@ -565,13 +540,13 @@ local function createSpeedControl(parent)
     leftCorner.CornerRadius = UDim.new(0, 4)
     
     local modeText = Instance.new("TextLabel", selectorFrame)
-    modeText.Size = UDim2.new(0, 100, 1, 0)
-    modeText.Position = UDim2.new(0, 34, 0, 0)
+    modeText.Size = UDim2.new(0, 80, 1, 0)
+    modeText.Position = UDim2.new(0, 30, 0, 0)
     modeText.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     modeText.Text = Config.MovementMode
     modeText.TextColor3 = Color3.new(1, 1, 1)
     modeText.Font = Enum.Font.SourceSansBold
-    modeText.TextSize = 12
+    modeText.TextSize = 11
     modeText.BorderSizePixel = 0
     modeText.ZIndex = 2
     
@@ -579,13 +554,13 @@ local function createSpeedControl(parent)
     modeCorner2.CornerRadius = UDim.new(0, 4)
     
     local rightArrow = Instance.new("TextButton", selectorFrame)
-    rightArrow.Size = UDim2.new(0, 30, 1, 0)
-    rightArrow.Position = UDim2.new(0, 138, 0, 0)
+    rightArrow.Size = UDim2.new(0, 28, 1, 0)
+    rightArrow.Position = UDim2.new(1, -28, 0, 0)
     rightArrow.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     rightArrow.Text = ">"
     rightArrow.TextColor3 = Color3.new(1, 1, 1)
     rightArrow.Font = Enum.Font.SourceSansBold
-    rightArrow.TextSize = 16
+    rightArrow.TextSize = 14
     rightArrow.BorderSizePixel = 0
     rightArrow.ZIndex = 2
     
@@ -593,7 +568,7 @@ local function createSpeedControl(parent)
     rightCorner.CornerRadius = UDim.new(0, 4)
     
     local speedFrame = Instance.new("Frame", parent)
-    speedFrame.Size = UDim2.new(1, 0, 0, 50)
+    speedFrame.Size = UDim2.new(1, 0, 0, 44)
     speedFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     speedFrame.BorderSizePixel = 0
     speedFrame.ZIndex = 2
@@ -602,24 +577,24 @@ local function createSpeedControl(parent)
     speedCorner.CornerRadius = UDim.new(0, 4)
     
     local speedLabel = Instance.new("TextLabel", speedFrame)
-    speedLabel.Size = UDim2.new(1, -10, 0, 20)
-    speedLabel.Position = UDim2.new(0, 8, 0, 4)
+    speedLabel.Size = UDim2.new(0.6, -5, 0, 18)
+    speedLabel.Position = UDim2.new(0, 8, 0, 3)
     speedLabel.BackgroundTransparency = 1
     speedLabel.Text = "Speed"
     speedLabel.TextColor3 = Color3.new(1, 1, 1)
     speedLabel.Font = Enum.Font.SourceSans
-    speedLabel.TextSize = 13
+    speedLabel.TextSize = 12
     speedLabel.TextXAlignment = Enum.TextXAlignment.Left
     speedLabel.ZIndex = 2
     
     local speedValue = Instance.new("TextLabel", speedFrame)
-    speedValue.Size = UDim2.new(0, 60, 0, 20)
-    speedValue.Position = UDim2.new(1, -68, 0, 4)
+    speedValue.Size = UDim2.new(0, 55, 0, 18)
+    speedValue.Position = UDim2.new(1, -60, 0, 3)
     speedValue.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    speedValue.Text = tostring(Config.WalkSpeed) .. " s/s"
+    speedValue.Text = tostring(Config.WalkSpeed)
     speedValue.TextColor3 = Color3.new(1, 1, 1)
     speedValue.Font = Enum.Font.SourceSans
-    speedValue.TextSize = 12
+    speedValue.TextSize = 11
     speedValue.BorderSizePixel = 0
     speedValue.ZIndex = 2
     
@@ -627,8 +602,8 @@ local function createSpeedControl(parent)
     speedValueCorner.CornerRadius = UDim.new(0, 4)
     
     local sliderTrack = Instance.new("Frame", speedFrame)
-    sliderTrack.Size = UDim2.new(1, -20, 0, 4)
-    sliderTrack.Position = UDim2.new(0, 10, 0, 32)
+    sliderTrack.Size = UDim2.new(1, -16, 0, 4)
+    sliderTrack.Position = UDim2.new(0, 8, 0, 28)
     sliderTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     sliderTrack.BorderSizePixel = 0
     sliderTrack.ZIndex = 2
@@ -637,7 +612,7 @@ local function createSpeedControl(parent)
     sliderCorner.CornerRadius = UDim.new(1, 0)
     
     local fill = Instance.new("Frame", sliderTrack)
-    fill.Size = UDim2.new((Config.WalkSpeed - 0) / (500 - 0), 0, 1, 0)
+    fill.Size = UDim2.new(Config.WalkSpeed / 500, 0, 1, 0)
     fill.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
     fill.BorderSizePixel = 0
     fill.ZIndex = 2
@@ -646,8 +621,8 @@ local function createSpeedControl(parent)
     fillCorner.CornerRadius = UDim.new(1, 0)
     
     local knob = Instance.new("TextButton", sliderTrack)
-    knob.Size = UDim2.new(0, 12, 0, 12)
-    knob.Position = UDim2.new((Config.WalkSpeed - 0) / (500 - 0), -6, 0.5, -6)
+    knob.Size = UDim2.new(0, 10, 0, 10)
+    knob.Position = UDim2.new(Config.WalkSpeed / 500, -5, 0.5, -5)
     knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     knob.Text = ""
     knob.BorderSizePixel = 0
@@ -662,78 +637,61 @@ local function createSpeedControl(parent)
         local newValue = math.clamp(value, 0, 500)
         if Config.MovementMode == "WalkSpeed" then
             Config.WalkSpeed = newValue
-            speedValue.Text = string.format("%.0f", newValue) .. " s/s"
+            speedValue.Text = string.format("%.0f", newValue)
         else
             Config.BVSpeed = newValue
-            speedValue.Text = string.format("%.0f", newValue) .. " s/s"
+            speedValue.Text = string.format("%.0f", newValue)
         end
         local percent = newValue / 500
         fill.Size = UDim2.new(percent, 0, 1, 0)
-        knob.Position = UDim2.new(percent, -6, 0.5, -6)
+        knob.Position = UDim2.new(percent, -5, 0.5, -5)
     end
     
     local function updateModeDisplay()
         modeText.Text = Config.MovementMode
         if Config.MovementMode == "WalkSpeed" then
-            speedValue.Text = string.format("%.0f", Config.WalkSpeed) .. " s/s"
+            speedValue.Text = string.format("%.0f", Config.WalkSpeed)
             local percent = Config.WalkSpeed / 500
             fill.Size = UDim2.new(percent, 0, 1, 0)
-            knob.Position = UDim2.new(percent, -6, 0.5, -6)
+            knob.Position = UDim2.new(percent, -5, 0.5, -5)
         else
-            speedValue.Text = string.format("%.0f", Config.BVSpeed) .. " s/s"
+            speedValue.Text = string.format("%.0f", Config.BVSpeed)
             local percent = Config.BVSpeed / 500
             fill.Size = UDim2.new(percent, 0, 1, 0)
-            knob.Position = UDim2.new(percent, -6, 0.5, -6)
+            knob.Position = UDim2.new(percent, -5, 0.5, -5)
         end
     end
     
     leftArrow.MouseButton1Click:Connect(function()
-        if Config.MovementMode == "WalkSpeed" then
-            Config.MovementMode = "BodyVelocity"
-        else
-            Config.MovementMode = "WalkSpeed"
-        end
+        Config.MovementMode = Config.MovementMode == "WalkSpeed" and "BodyVelocity" or "WalkSpeed"
         updateModeDisplay()
     end)
-    
     rightArrow.MouseButton1Click:Connect(function()
-        if Config.MovementMode == "WalkSpeed" then
-            Config.MovementMode = "BodyVelocity"
-        else
-            Config.MovementMode = "WalkSpeed"
-        end
+        Config.MovementMode = Config.MovementMode == "WalkSpeed" and "BodyVelocity" or "WalkSpeed"
         updateModeDisplay()
     end)
     
-    knob.MouseButton1Down:Connect(function()
-        dragging = true
-    end)
-    
+    knob.MouseButton1Down:Connect(function() dragging = true end)
     UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
     end)
-    
     UserInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local mousePos = input.Position.X
             local sliderPos = sliderTrack.AbsolutePosition.X
             local sliderWidth = sliderTrack.AbsoluteSize.X
             local percent = math.clamp((mousePos - sliderPos) / sliderWidth, 0, 1)
-            local newValue = percent * 500
-            updateSpeedUI(newValue)
+            updateSpeedUI(percent * 500)
         end
     end)
     
     updateModeDisplay()
-    
     return modeFrame, speedFrame
 end
 
 local function createCoordinateInput(parent, name, prop)
     local frame = Instance.new("Frame", parent)
-    frame.Size = UDim2.new(1, 0, 0, 26)
+    frame.Size = UDim2.new(1, 0, 0, 24)
     frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     frame.BorderSizePixel = 0
     frame.ZIndex = 2
@@ -742,23 +700,23 @@ local function createCoordinateInput(parent, name, prop)
     frameCorner.CornerRadius = UDim.new(0, 4)
     
     local label = Instance.new("TextLabel", frame)
-    label.Size = UDim2.new(0.35, -5, 1, 0)
+    label.Size = UDim2.new(0.4, -5, 1, 0)
     label.Position = UDim2.new(0, 8, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = name
     label.TextColor3 = Color3.new(1, 1, 1)
     label.Font = Enum.Font.SourceSans
-    label.TextSize = 13
+    label.TextSize = 12
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.ZIndex = 2
     
     local box = Instance.new("TextBox", frame)
-    box.Size = UDim2.new(0.45, -15, 1, -6)
-    box.Position = UDim2.new(0.35, 5, 0, 3)
+    box.Size = UDim2.new(0.45, -15, 1, -4)
+    box.Position = UDim2.new(0.4, 5, 0, 2)
     box.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     box.TextColor3 = Color3.new(1, 1, 1)
     box.Font = Enum.Font.SourceSans
-    box.TextSize = 12
+    box.TextSize = 11
     box.Text = ""
     box.PlaceholderText = string.format("%.0f %.0f %.0f", Config[prop].X, Config[prop].Y, Config[prop].Z)
     box.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
@@ -770,13 +728,13 @@ local function createCoordinateInput(parent, name, prop)
     boxCorner.CornerRadius = UDim.new(0, 4)
     
     local teleportBtn = Instance.new("TextButton", frame)
-    teleportBtn.Size = UDim2.new(0, 45, 0, 20)
-    teleportBtn.Position = UDim2.new(1, -50, 0.5, -10)
+    teleportBtn.Size = UDim2.new(0, 40, 0, 18)
+    teleportBtn.Position = UDim2.new(1, -44, 0.5, -9)
     teleportBtn.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
     teleportBtn.Text = "go"
     teleportBtn.TextColor3 = Color3.new(1, 1, 1)
     teleportBtn.Font = Enum.Font.SourceSansBold
-    teleportBtn.TextSize = 12
+    teleportBtn.TextSize = 11
     teleportBtn.BorderSizePixel = 0
     teleportBtn.ZIndex = 2
     
@@ -785,12 +743,10 @@ local function createCoordinateInput(parent, name, prop)
     
     teleportBtn.MouseEnter:Connect(function() teleportBtn.BackgroundColor3 = Color3.fromRGB(85, 85, 85) end)
     teleportBtn.MouseLeave:Connect(function() teleportBtn.BackgroundColor3 = Color3.fromRGB(65, 65, 65) end)
-    
     teleportBtn.MouseButton1Click:Connect(function()
         teleportBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
         task.wait(0.1)
         teleportBtn.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
-        
         local char = LocalPlayer.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         if root then root.CFrame = CFrame.new(Config[prop]) end
@@ -819,7 +775,6 @@ local function toggleRagdoll(state)
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChild("Humanoid")
     if not (char and hum) then return end
-    
     if state then
         hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
         hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
@@ -847,7 +802,6 @@ local function toggleTouchFling(state)
             detection.Name = "juisdfj0i32i0eidsuf0iok"
             detection.Parent = ReplicatedStorage
         end
-        
         local function flingLoop()
             while Config.TouchFling do
                 local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -862,7 +816,6 @@ local function toggleTouchFling(state)
                 RunService.Heartbeat:Wait()
             end
         end
-        
         if flingThread then coroutine.close(flingThread) end
         flingThread = coroutine.create(flingLoop)
         coroutine.resume(flingThread)
@@ -878,23 +831,19 @@ local function toggleInvis(state)
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not (char and hrp) then return end
-
     if state then
         for _, v in pairs(char:GetDescendants()) do 
             if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then 
                 v.Transparency = Config.Invis_Transparency
             end 
         end
-        
         local savedPos = hrp.CFrame
         char:MoveTo(Config.SeatTeleportPos)
         task.wait(0.1)
-        
         local seat = Instance.new('Seat', workspace)
         seat.Name = "InvisChair"
         seat.Transparency = 1
         seat.Position = Config.SeatTeleportPos
-        
         local weld = Instance.new("Weld", seat)
         weld.Part0 = seat
         weld.Part1 = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
@@ -906,11 +855,9 @@ local function toggleInvis(state)
                 v.Transparency = 0
             end 
         end
-        
         local chair = workspace:FindFirstChild("InvisChair")
         if chair then chair:Destroy() end
     end
-    
     if updateInvis then updateInvis() end
 end
 
@@ -936,7 +883,6 @@ local function toggleESP(state)
             espConnection:Disconnect()
             espConnection = nil
         end
-        
         for _, player in ipairs(Players:GetPlayers()) do
             local highlight = player.Character and player.Character:FindFirstChild("GetReal")
             if highlight then highlight:Destroy() end
@@ -970,10 +916,8 @@ local function resetHitboxes()
                 head.Size = Vector3.new(1.2, 1.2, 1.2)
                 head.Transparency = 0
                 head.CanCollide = true
-                
                 local face = head:FindFirstChild("Face")
                 if face then face.Transparency = 0 end
-                
                 for _, child in pairs(head:GetChildren()) do
                     if child:IsA("Decal") or child:IsA("Texture") then
                         child.Transparency = 0
@@ -988,9 +932,7 @@ local function teleportPlayers()
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if not (char and root) then return end
-    
     local offsetPosition = root.Position + (root.CFrame.LookVector * Config.TeleportDistance)
-    
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character then
             local tRoot = player.Character:FindFirstChild("HumanoidRootPart")
@@ -1035,47 +977,47 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-local characterWindow, characterContent = createWindow("Character", 320, 500, 30, 55)
-local combatWindow, combatContent = createWindow("Combat", 300, 380, 370, 55)
-local visualWindow, visualContent = createWindow("Visual", 260, 130, 690, 55)
-local teleportWindow, teleportContent = createWindow("Teleport", 300, 200, 30, 580)
+local characterWindow, characterContent = createWindow("Character", 280, 450, 30, 55)
+local combatWindow, combatContent = createWindow("Combat", 280, 350, 330, 55)
+local visualWindow, visualContent = createWindow("Visual", 240, 110, 630, 55)
+local teleportWindow, teleportContent = createWindow("Teleport", 280, 180, 30, 520)
 
 local physicsSection = createSection(characterContent, "Physics")
 local modeFrame, speedFrame = createSpeedControl(physicsSection)
 modeFrame.Parent = physicsSection
 speedFrame.Parent = physicsSection
-createSlider(physicsSection, "Jump Power", "JumpPower", 0, 250, "", 0)
+createSlider(physicsSection, "Jump", "JumpPower", 0, 250, "", 0)
 createSlider(physicsSection, "Gravity", "Gravity", 0, 500, "", 1)
-createToggle(physicsSection, "Disable Ragdoll", "DisableRagdoll", toggleRagdoll)
+createToggle(physicsSection, "No Ragdoll", "DisableRagdoll", toggleRagdoll)
 
 local abilitiesSection = createSection(characterContent, "Abilities")
-createToggle(abilitiesSection, "No Clip", "Noclip")
-createToggle(abilitiesSection, "Infinite Jump", "InfJump")
-local invisToggle, invisUpdate = createToggle(abilitiesSection, "Invisible", "Invis_Enabled", toggleInvis)
+createToggle(abilitiesSection, "Noclip", "Noclip")
+createToggle(abilitiesSection, "Inf Jump", "InfJump")
+local invisToggle, invisUpdate = createToggle(abilitiesSection, "Invis", "Invis_Enabled", toggleInvis)
 updateInvis = invisUpdate
 createToggle(abilitiesSection, "Touch Fling", "TouchFling", toggleTouchFling)
-createSlider(abilitiesSection, "Fling Power", "FlingPower", 0, 9e9, "", 0)
+createSlider(abilitiesSection, "Fling", "FlingPower", 0, 9e9, "", 0)
 
 local spinSection = createSection(characterContent, "Spin")
 createToggle(spinSection, "Spin", "Spin_Enabled", toggleSpin)
-createSlider(spinSection, "Spin Speed", "Spin_Speed", 0, 360, "deg/s", 0)
+createSlider(spinSection, "Speed", "Spin_Speed", 0, 360, "", 0)
 
 local aimbotSection = createSection(combatContent, "Aimbot")
-createToggle(aimbotSection, "Enable Aimbot", "AimbotEnabled")
-createSlider(aimbotSection, "Smoothness", "AimbotSmoothness", 0, 1, "", 2)
-createDropdown(aimbotSection, "Target Part", "AimbotTargetPart", {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"})
-createSlider(aimbotSection, "Field Of View", "AimbotFieldOfView", 50, 500, "", 0)
+createToggle(aimbotSection, "Enable", "AimbotEnabled")
+createSlider(aimbotSection, "Smooth", "AimbotSmoothness", 0, 1, "", 2)
+createDropdown(aimbotSection, "Part", "AimbotTargetPart", {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"})
+createSlider(aimbotSection, "FOV", "AimbotFieldOfView", 50, 500, "", 0)
 
 local hitboxSection = createSection(combatContent, "Hitbox")
-createToggle(hitboxSection, "Hitbox", "Hitbox")
-createSlider(hitboxSection, "Hitbox Size", "HitboxSize", 1, 500, "s", 0)
-createToggle(hitboxSection, "Visible Hitbox", "HitboxVisible")
+createToggle(hitboxSection, "Enable", "Hitbox")
+createSlider(hitboxSection, "Size", "HitboxSize", 1, 500, "", 0)
+createToggle(hitboxSection, "Visible", "HitboxVisible")
 
 local visualSection = createSection(visualContent, "ESP")
-createToggle(visualSection, "ESP", "ESP_Enabled", toggleESP)
+createToggle(visualSection, "Enable", "ESP_Enabled", toggleESP)
 
 local teleportSection = createSection(teleportContent, "Teleport")
-createToggle(teleportSection, "Teleport Players", "TeleportEnabled", function(state)
+createToggle(teleportSection, "Push", "TeleportEnabled", function(state)
     if state then
         if teleportConnection then teleportConnection:Disconnect() end
         teleportConnection = RunService.Heartbeat:Connect(teleportPlayers)
@@ -1086,18 +1028,16 @@ createToggle(teleportSection, "Teleport Players", "TeleportEnabled", function(st
         end
     end
 end)
-createSlider(teleportSection, "Teleport Distance", "TeleportDistance", 1, 100, "s", 0)
+createSlider(teleportSection, "Distance", "TeleportDistance", 1, 100, "", 0)
 
-local selfTeleportSection = createSection(teleportContent, "Self Teleport")
-createCoordinateInput(selfTeleportSection, "Teleport To", "TeleportTo")
+local selfTeleportSection = createSection(teleportContent, "Self")
+createCoordinateInput(selfTeleportSection, "Pos", "TeleportTo")
 
 RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChild("Humanoid")
-    
     if not (char and hrp and hum) then return end
-
     if not currentBodyVelocity then
         currentBodyVelocity = hrp:FindFirstChild("MoveBV")
         if not currentBodyVelocity then
@@ -1106,12 +1046,9 @@ RunService.Heartbeat:Connect(function()
             currentBodyVelocity.Parent = hrp
         end
     end
-    
     currentBodyVelocity.MaxForce = Vector3.zero
-
     hum.JumpPower = Config.JumpPower
     workspace.Gravity = Config.Gravity
-
     if Config.MovementMode == "BodyVelocity" then
         hum.WalkSpeed = 16
         local dir = hum.MoveDirection
@@ -1125,7 +1062,6 @@ RunService.Heartbeat:Connect(function()
         currentBodyVelocity.MaxForce = Vector3.zero
         hum.WalkSpeed = Config.WalkSpeed
     end
-
     if Config.Noclip then
         for _, v in pairs(char:GetDescendants()) do
             if v:IsA("BasePart") then
@@ -1144,12 +1080,8 @@ RunService.RenderStepped:Connect(function()
                     head.Size = Vector3.one * Config.HitboxSize
                     head.Transparency = Config.HitboxVisible and 0.5 or 1
                     head.CanCollide = false
-                    
                     local face = head:FindFirstChild("Face")
-                    if face then
-                        face.Transparency = Config.HitboxVisible and 0.5 or 1
-                    end
-                    
+                    if face then face.Transparency = Config.HitboxVisible and 0.5 or 1 end
                     for _, child in pairs(head:GetChildren()) do
                         if child:IsA("Decal") or child:IsA("Texture") then
                             child.Transparency = Config.HitboxVisible and 0.5 or 1
@@ -1175,7 +1107,6 @@ end)
 
 UserInputService.InputBegan:Connect(function(i, g)
     if g then return end
-    
     if i.KeyCode == Enum.KeyCode.Z then
         Config.Invis_Enabled = not Config.Invis_Enabled
         toggleInvis(Config.Invis_Enabled)
@@ -1191,17 +1122,14 @@ end)
 Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function(character)
         task.wait(0.5)
-        
         if not Config.Hitbox then
             local head = character:FindFirstChild("Head")
             if head then
                 head.Size = Vector3.new(1.2, 1.2, 1.2)
                 head.Transparency = 0
                 head.CanCollide = true
-                
                 local face = head:FindFirstChild("Face")
                 if face then face.Transparency = 0 end
-                
                 for _, child in pairs(head:GetChildren()) do
                     if child:IsA("Decal") or child:IsA("Texture") then
                         child.Transparency = 0
@@ -1209,12 +1137,10 @@ Players.PlayerAdded:Connect(function(player)
                 end
             end
         end
-        
         if Config.DisableRagdoll then
             task.wait(0.1)
             toggleRagdoll(true)
         end
-        
         if Config.Spin_Enabled then
             if spinConnection then spinConnection:Disconnect() end
             toggleSpin(true)
@@ -1225,12 +1151,10 @@ end)
 LocalPlayer.CharacterAdded:Connect(function(character)
     task.wait(0.5)
     currentBodyVelocity = nil
-    
     if Config.Spin_Enabled then
         if spinConnection then spinConnection:Disconnect() end
         toggleSpin(true)
     end
-    
     if Config.Invis_Enabled then
         toggleInvis(true)
     end
